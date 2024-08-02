@@ -274,7 +274,7 @@ class RoarCompetitionSolution:
     def get_lookahead_value(self, speed):
         speed_to_lookahead_dict = {
             70: 12,
-            90: 12,
+            90: 13,
             110: 13,
             130: 14,
             160: 16,
@@ -302,8 +302,22 @@ class RoarCompetitionSolution:
         return (self.current_waypoint_idx + num_waypoints) % len(self.maneuverable_waypoints)
     
     def get_lateral_pid_config(self):
-        #60  = speed
         conf = {
+            "30": {
+                "Kp": 1.00,
+                "Kd": 0.03,
+                "Ki": 0.02
+            },
+            "40": {
+                "Kp": 0.90,
+                "Kd": 0.04,
+                "Ki": 0.03
+            },
+            "50": {
+                "Kp": 0.85,
+                "Kd": 0.05,
+                "Ki": 0.04
+            },
             "60": {
                 "Kp": 0.8034,
                 "Kd": 0.0521,
@@ -364,6 +378,16 @@ class RoarCompetitionSolution:
                 "Kd": 0.0401,
                 "Ki": 0.0504
             },
+            "250": {
+                "Kp": 0.2500,
+                "Kd": 0.0350,
+                "Ki": 0.0450
+            },
+            "270": {
+                "Kp": 0.2450,
+                "Kd": 0.0320,
+                "Ki": 0.0400
+            },
             "300": {
                 "Kp": 0.2065,
                 "Kd": 0.0082,
@@ -371,6 +395,7 @@ class RoarCompetitionSolution:
             }
         }
         return conf
+
 
 
     # The idea and code for averaging points is from smooth_waypoint_following_local_planner.py
