@@ -273,14 +273,14 @@ class RoarCompetitionSolution:
 
     def get_lookahead_value(self, speed):
         speed_to_lookahead_dict = {
-            70: 12,
-            90: 13,
-            110: 13,
-            130: 14,
-            160: 16,
-            180: 20,
-            200: 24,
-            300: 24
+            70: 14,
+            90: 15,
+            110: 15,
+            130: 16,
+            160: 18,
+            180: 22,
+            200: 30,
+            300: 30
         }
         num_waypoints = 3
         for speed_upper_bound, num_points in speed_to_lookahead_dict.items():
