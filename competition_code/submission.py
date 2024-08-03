@@ -66,6 +66,7 @@ class RoarCompetitionSolution:
                 + maneuverable_waypoints[endInd_8:startInd_12] \
                 + SEC_12_WAYPOINTS
         # self.maneuverable_waypoints = self.modified_points(maneuverable_waypoints)
+        
         self.vehicle = vehicle
         self.camera_sensor = camera_sensor
         self.location_sensor = location_sensor
@@ -273,14 +274,14 @@ class RoarCompetitionSolution:
 
     def get_lookahead_value(self, speed):
         speed_to_lookahead_dict = {
-            70: 14,
-            90: 15,
-            110: 15,
-            130: 16,
-            160: 18,
-            180: 22,
-            200: 30,
-            300: 30
+            70: 12,
+            90: 12,
+            110: 13,
+            130: 14,
+            160: 16,
+            180: 20,
+            200: 24,
+            300: 24
         }
         num_waypoints = 3
         for speed_upper_bound, num_points in speed_to_lookahead_dict.items():
@@ -565,9 +566,6 @@ class SpeedData:
 
 class ThrottleController():
     #Debug 
-    display_debug = False
-    debug_strings = deque(maxlen=1000)
-
     def __init__(self):
         self.max_radius = 10000
         self.max_speed = 300
@@ -584,8 +582,6 @@ class ThrottleController():
         self.brake_test_counter = 0
         self.brake_test_in_progress = False
 
-    def __del__(self):
-        print("done")
         # for s in self.__class__.debug_strings:
         #     print(s)
 
@@ -648,7 +644,7 @@ class ThrottleController():
         #determines the throttle and break values 
         t, b = self.speed_data_to_throttle_and_brake(update)
         #debugging print
-        self.dprint("--- (" + str(cur_wp_index) + ") throt " + str(t) + " brake " + str(b) + "---")
+        # self.dprint("--- (" + str(cur_wp_index) + ") throt " + str(t) + " brake " + str(b) + "---")
         return t, b
     
     # gets throttle and brake values based on current speed data, adjuests speed accordingly
@@ -675,7 +671,7 @@ class ThrottleController():
                 brake_threshold_multiplier = 1.0
             if percent_of_max > 1 + (brake_threshold_multiplier * percent_change_per_tick):
                 if self.brake_ticks > 0:
-                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: counter" + str(self.brake_ticks))
+                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: counter" + str(self.brake_ticks))
                     return -1, 1
                 # if speed is not decreasing fast, hit the brake.
                 if self.brake_ticks <= 0 and not self.speed_dropping_fast(percent_change_per_tick, speed_data.current_speed):
@@ -683,11 +679,11 @@ class ThrottleController():
                     self.brake_ticks = math.floor((percent_of_max - 1) / percent_change_per_tick)
                     # TODO: try 
                     # self.brake_ticks = 1, or (1 or 2 but not more)
-                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: initiate counter" + str(self.brake_ticks))
+                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: initiate counter" + str(self.brake_ticks))
                     return -1, 1
                 else:
                     # speed is already dropping fast, ok to throttle because the effect of throttle is delayed
-                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early1: sp_ch=" + str(percent_speed_change))
+                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early1: sp_ch=" + str(percent_speed_change))
                     self.brake_ticks = 0 # done slowing down. clear brake_ticks
                     return 1, 0
             else:
@@ -696,12 +692,12 @@ class ThrottleController():
                 #otherwise, it calculates the throttle needed to maintain the curr speed and adjusts accordingly
                 if self.speed_dropping_fast(percent_change_per_tick, speed_data.current_speed):
                     # speed is already dropping fast, ok to throttle because the effect of throttle is delayed
-                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early2: sp_ch=" + str(percent_speed_change))
+                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early2: sp_ch=" + str(percent_speed_change))
                     self.brake_ticks = 0 # done slowing down. clear brake_ticks
                     return 1, 0
                 throttle_to_maintain = self.get_throttle_to_maintain_speed(speed_data.current_speed)
                 if percent_of_max > 1.02 or percent_speed_change > (-percent_change_per_tick / 2):
-                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle down: sp_ch=" + str(percent_speed_change))
+                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle down: sp_ch=" + str(percent_speed_change))
                     return throttle_to_maintain * throttle_decrease_multiple, 0 # coast, to slow down
                 else:
                     # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle maintain: sp_ch=" + str(percent_speed_change))
@@ -711,17 +707,17 @@ class ThrottleController():
             # Consider speeding up
             if self.speed_dropping_fast(percent_change_per_tick, speed_data.current_speed):
                 # speed is dropping fast, ok to throttle because the effect of throttle is delayed
-                self.dprint("tb: tick" + str(self.tick_counter) + " throttle: full speed drop: sp_ch=" + str(percent_speed_change))
+                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle: full speed drop: sp_ch=" + str(percent_speed_change))
                 return 1, 0
             if percent_of_max < speed_up_threshold:
-                self.dprint("tb: tick" + str(self.tick_counter) + " throttle full: p_max=" + str(percent_of_max))
+                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle full: p_max=" + str(percent_of_max))
                 return 1, 0
             throttle_to_maintain = self.get_throttle_to_maintain_speed(speed_data.current_speed)
             if percent_of_max < 0.98 or percent_speed_change < -0.01:
-                self.dprint("tb: tick" + str(self.tick_counter) + " throttle up: sp_ch=" + str(percent_speed_change))
+                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle up: sp_ch=" + str(percent_speed_change))
                 return throttle_to_maintain * throttle_increase_multiple, 0 
             else:
-                self.dprint("tb: tick" + str(self.tick_counter) + " throttle maintain: sp_ch=" + str(percent_speed_change))
+                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle maintain: sp_ch=" + str(percent_speed_change))
                 return throttle_to_maintain, 0
 
     # used to detect when speed is dropping due to brakes applied earlier. speed delta has a steep negative slope.
@@ -833,13 +829,13 @@ class ThrottleController():
         # sets the frictino components for each section
         mu = 2.5
         if current_section == 0:
-            mu = 2.8
+            mu = 1
         if current_section == 1:
             mu = 2.0
         if current_section == 2:
             mu = 1.95
         if current_section == 3:
-            mu = 2.75
+            mu = 1
         if current_section == 4:
             mu = 3.25
         if current_section == 5:
@@ -847,7 +843,7 @@ class ThrottleController():
         if current_section == 6:
             mu = 1.95
         if current_section == 7:
-            mu = 1.3
+            mu = 0.5
         # if current_section == 7 and current_speed<150:
         #     mu = 1.8
         if current_section == 8:
@@ -873,16 +869,16 @@ class ThrottleController():
         return max(20, min(target_speed, self.max_speed))  # clamp between 20 and max_speed
 
 
-    def print_speed(self, text: str, s1: float, s2: float, s3: float, s4: float, curr_s: float):
-        self.dprint(text + " s1= " + str(round(s1, 2)) + " s2= " + str(round(s2, 2)) + " s3= " 
-                    + str(round(s3, 2)) + " s4= " + str(round(s4, 2))
-            + " cspeed= " + str(round(curr_s, 2)))
+    # def print_speed(self, text: str, s1: float, s2: float, s3: float, s4: float, curr_s: float):
+    #     self.dprint(text + " s1= " + str(round(s1, 2)) + " s2= " + str(round(s2, 2)) + " s3= " 
+    #                 + str(round(s3, 2)) + " s4= " + str(round(s4, 2))
+    #         + " cspeed= " + str(round(curr_s, 2)))
 
-    # debug print
-    def dprint(self, text):
-        if self.display_debug:
-            print(text)
-            self.debug_strings.append(text)
+    # # debug print
+    # def dprint(self, text):
+    #     if self.display_debug:
+    #         print(text)
+    #         self.debug_strings.append(text)
 
 SEC_8_WAYPOINTS = [
   new_x_y(-104.11528778076172, -726.1124877929688),
