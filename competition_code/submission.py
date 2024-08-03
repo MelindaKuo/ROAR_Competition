@@ -644,7 +644,7 @@ class ThrottleController():
         #determines the throttle and break values 
         t, b = self.speed_data_to_throttle_and_brake(update)
         #debugging print
-        self.dprint("--- (" + str(cur_wp_index) + ") throt " + str(t) + " brake " + str(b) + "---")
+        # self.dprint("--- (" + str(cur_wp_index) + ") throt " + str(t) + " brake " + str(b) + "---")
         return t, b
     
     # gets throttle and brake values based on current speed data, adjuests speed accordingly
@@ -671,7 +671,7 @@ class ThrottleController():
                 brake_threshold_multiplier = 1.0
             if percent_of_max > 1 + (brake_threshold_multiplier * percent_change_per_tick):
                 if self.brake_ticks > 0:
-                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: counter" + str(self.brake_ticks))
+                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: counter" + str(self.brake_ticks))
                     return -1, 1
                 # if speed is not decreasing fast, hit the brake.
                 if self.brake_ticks <= 0 and not self.speed_dropping_fast(percent_change_per_tick, speed_data.current_speed):
@@ -679,11 +679,11 @@ class ThrottleController():
                     self.brake_ticks = math.floor((percent_of_max - 1) / percent_change_per_tick)
                     # TODO: try 
                     # self.brake_ticks = 1, or (1 or 2 but not more)
-                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: initiate counter" + str(self.brake_ticks))
+                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: initiate counter" + str(self.brake_ticks))
                     return -1, 1
                 else:
                     # speed is already dropping fast, ok to throttle because the effect of throttle is delayed
-                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early1: sp_ch=" + str(percent_speed_change))
+                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early1: sp_ch=" + str(percent_speed_change))
                     self.brake_ticks = 0 # done slowing down. clear brake_ticks
                     return 1, 0
             else:
@@ -692,12 +692,12 @@ class ThrottleController():
                 #otherwise, it calculates the throttle needed to maintain the curr speed and adjusts accordingly
                 if self.speed_dropping_fast(percent_change_per_tick, speed_data.current_speed):
                     # speed is already dropping fast, ok to throttle because the effect of throttle is delayed
-                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early2: sp_ch=" + str(percent_speed_change))
+                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early2: sp_ch=" + str(percent_speed_change))
                     self.brake_ticks = 0 # done slowing down. clear brake_ticks
                     return 1, 0
                 throttle_to_maintain = self.get_throttle_to_maintain_speed(speed_data.current_speed)
                 if percent_of_max > 1.02 or percent_speed_change > (-percent_change_per_tick / 2):
-                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle down: sp_ch=" + str(percent_speed_change))
+                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle down: sp_ch=" + str(percent_speed_change))
                     return throttle_to_maintain * throttle_decrease_multiple, 0 # coast, to slow down
                 else:
                     # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle maintain: sp_ch=" + str(percent_speed_change))
@@ -707,17 +707,17 @@ class ThrottleController():
             # Consider speeding up
             if self.speed_dropping_fast(percent_change_per_tick, speed_data.current_speed):
                 # speed is dropping fast, ok to throttle because the effect of throttle is delayed
-                self.dprint("tb: tick" + str(self.tick_counter) + " throttle: full speed drop: sp_ch=" + str(percent_speed_change))
+                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle: full speed drop: sp_ch=" + str(percent_speed_change))
                 return 1, 0
             if percent_of_max < speed_up_threshold:
-                self.dprint("tb: tick" + str(self.tick_counter) + " throttle full: p_max=" + str(percent_of_max))
+                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle full: p_max=" + str(percent_of_max))
                 return 1, 0
             throttle_to_maintain = self.get_throttle_to_maintain_speed(speed_data.current_speed)
             if percent_of_max < 0.98 or percent_speed_change < -0.01:
-                self.dprint("tb: tick" + str(self.tick_counter) + " throttle up: sp_ch=" + str(percent_speed_change))
+                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle up: sp_ch=" + str(percent_speed_change))
                 return throttle_to_maintain * throttle_increase_multiple, 0 
             else:
-                self.dprint("tb: tick" + str(self.tick_counter) + " throttle maintain: sp_ch=" + str(percent_speed_change))
+                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle maintain: sp_ch=" + str(percent_speed_change))
                 return throttle_to_maintain, 0
 
     # used to detect when speed is dropping due to brakes applied earlier. speed delta has a steep negative slope.
