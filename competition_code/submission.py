@@ -66,6 +66,7 @@ class RoarCompetitionSolution:
                 + maneuverable_waypoints[endInd_8:startInd_12] \
                 + SEC_12_WAYPOINTS
         # self.maneuverable_waypoints = self.modified_points(maneuverable_waypoints)
+        
         self.vehicle = vehicle
         self.camera_sensor = camera_sensor
         self.location_sensor = location_sensor
@@ -273,14 +274,14 @@ class RoarCompetitionSolution:
 
     def get_lookahead_value(self, speed):
         speed_to_lookahead_dict = {
-            70: 14,
-            90: 15,
-            110: 15,
-            130: 16,
-            160: 18,
-            180: 22,
-            200: 30,
-            300: 30
+            70: 12,
+            90: 12,
+            110: 13,
+            130: 14,
+            160: 16,
+            180: 20,
+            200: 24,
+            300: 24
         }
         num_waypoints = 3
         for speed_upper_bound, num_points in speed_to_lookahead_dict.items():
@@ -565,9 +566,6 @@ class SpeedData:
 
 class ThrottleController():
     #Debug 
-    display_debug = False
-    debug_strings = deque(maxlen=1000)
-
     def __init__(self):
         self.max_radius = 10000
         self.max_speed = 300
@@ -584,8 +582,6 @@ class ThrottleController():
         self.brake_test_counter = 0
         self.brake_test_in_progress = False
 
-    def __del__(self):
-        print("done")
         # for s in self.__class__.debug_strings:
         #     print(s)
 
@@ -833,13 +829,13 @@ class ThrottleController():
         # sets the frictino components for each section
         mu = 2.5
         if current_section == 0:
-            mu = 2.8
+            mu = 1
         if current_section == 1:
             mu = 2.0
         if current_section == 2:
             mu = 1.95
         if current_section == 3:
-            mu = 2.75
+            mu = 1
         if current_section == 4:
             mu = 3.25
         if current_section == 5:
@@ -847,7 +843,7 @@ class ThrottleController():
         if current_section == 6:
             mu = 1.95
         if current_section == 7:
-            mu = 1.3
+            mu = 0.5
         # if current_section == 7 and current_speed<150:
         #     mu = 1.8
         if current_section == 8:
@@ -873,16 +869,16 @@ class ThrottleController():
         return max(20, min(target_speed, self.max_speed))  # clamp between 20 and max_speed
 
 
-    def print_speed(self, text: str, s1: float, s2: float, s3: float, s4: float, curr_s: float):
-        self.dprint(text + " s1= " + str(round(s1, 2)) + " s2= " + str(round(s2, 2)) + " s3= " 
-                    + str(round(s3, 2)) + " s4= " + str(round(s4, 2))
-            + " cspeed= " + str(round(curr_s, 2)))
+    # def print_speed(self, text: str, s1: float, s2: float, s3: float, s4: float, curr_s: float):
+    #     self.dprint(text + " s1= " + str(round(s1, 2)) + " s2= " + str(round(s2, 2)) + " s3= " 
+    #                 + str(round(s3, 2)) + " s4= " + str(round(s4, 2))
+    #         + " cspeed= " + str(round(curr_s, 2)))
 
-    # debug print
-    def dprint(self, text):
-        if self.display_debug:
-            print(text)
-            self.debug_strings.append(text)
+    # # debug print
+    # def dprint(self, text):
+    #     if self.display_debug:
+    #         print(text)
+    #         self.debug_strings.append(text)
 
 SEC_8_WAYPOINTS = [
   new_x_y(-104.11528778076172, -726.1124877929688),
