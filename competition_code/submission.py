@@ -788,7 +788,7 @@ class ThrottleController():
             if len(points) >= len(self.target_distance):   #if the number of poitns is > the intended target distance, break
                 break
 
-        self.dprint("wp dist " +  str(dist))
+        #self.dprint("wp dist " +  str(dist))
         return points # return waypoints
     #returns radius of the curve
     def get_radius(self, wp):
