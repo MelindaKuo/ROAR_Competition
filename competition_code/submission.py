@@ -9,6 +9,7 @@ from typing import List, Tuple, Dict, Optional
 import math
 import numpy as np
 import roar_py_interface
+import roar_py_carla
 
 #radians
 def normalize_rad(rad : float):
@@ -43,7 +44,7 @@ class RoarCompetitionSolution:
     def __init__(
         self,
         maneuverable_waypoints: List[roar_py_interface.RoarPyWaypoint],
-        vehicle : roar_py_interface.RoarPyActor,
+        vehicle : roar_py_interface.RoarPyActor,    
         camera_sensor : roar_py_interface.RoarPyCameraSensor = None,
         location_sensor : roar_py_interface.RoarPyLocationInWorldSensor = None,
         velocity_sensor : roar_py_interface.RoarPyVelocimeterSensor = None,
@@ -62,7 +63,8 @@ class RoarCompetitionSolution:
         #     maneuverable_waypoints[:startInd_8] + SEC_8_WAYPOINTS \
         #         + maneuverable_waypoints[endInd_8:] 
         self.maneuverable_waypoints = \
-            maneuverable_waypoints[:startInd_8] + SEC_8_WAYPOINTS \
+            SEC_1_WAYPOINTS \
+            + maneuverable_waypoints[199:startInd_8] + SEC_8_WAYPOINTS \
                 + maneuverable_waypoints[endInd_8:startInd_12] \
                 + SEC_12_WAYPOINTS
         # self.maneuverable_waypoints = self.modified_points(maneuverable_waypoints)
@@ -89,7 +91,6 @@ class RoarCompetitionSolution:
         self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2592, 2770]
         print(f"1 lap length: {len(self.maneuverable_waypoints)}")
         print(f"indexes: {self.section_indeces}")
-
         # Receive location, rotation and velocity data 
         vehicle_location = self.location_sensor.get_last_gym_observation()
         vehicle_rotation = self.rpy_sensor.get_last_gym_observation()
@@ -115,55 +116,55 @@ class RoarCompetitionSolution:
     #             new_points.append(waypoint)
     #     return new_points
         
-    def modified_points_bad(self, waypoints):
-        end_ind = 1964
-        num_points = 50
-        start_ind = end_ind - num_points
-        shift_vector = np.array([0.5, 0, 0])
-        step_vector = shift_vector / num_points
+    # def modified_points_bad(self, waypoints):
+    #     end_ind = 1964
+    #     num_points = 50
+    #     start_ind = end_ind - num_points
+    #     shift_vector = np.array([0.5, 0, 0])
+    #     step_vector = shift_vector / num_points
 
-        s2 = 1965
-        num_points2 = 150
-        shift_vector2 = np.array([0, 2.0, 0])
+    #     s2 = 1965
+    #     num_points2 = 150
+    #     shift_vector2 = np.array([0, 2.0, 0])
 
 
-        new_points = []
-        for ind, waypoint in enumerate(waypoints):
-            p = waypoint
-            if ind >= start_ind and ind < end_ind:
-                p = self.point_plus_vec(p, step_vector * (ind - start_ind))
-            if ind >= s2 and ind < s2 + num_points2:
-                 p = self.point_plus_vec(p, shift_vector2)
-            new_points.append(p)
-        return new_points
+    #     new_points = []
+    #     for ind, waypoint in enumerate(waypoints):
+    #         p = waypoint
+    #         if ind >= start_ind and ind < end_ind:
+    #             p = self.point_plus_vec(p, step_vector * (ind - start_ind))
+    #         if ind >= s2 and ind < s2 + num_points2:
+    #              p = self.point_plus_vec(p, shift_vector2)
+    #         new_points.append(p)
+    #     return new_points
 
-    def modified_points_good(self, waypoints):
-        start_ind = 1920
-        num_points = 100
-        end_ind = start_ind + num_points
-        shift_vector = np.array([2.8, 0, 0])
-        step_vector = shift_vector / num_points
+    # def modified_points_good(self, waypoints):
+    #     start_ind = 1920
+    #     num_points = 100
+    #     end_ind = start_ind + num_points
+    #     shift_vector = np.array([2.8, 0, 0])
+    #     step_vector = shift_vector / num_points
 
-        s2 = 1965
-        num_points2 = 150
-        shift_vector2 = np.array([0, 3.5, 0])
+    #     s2 = 1965
+    #     num_points2 = 150
+    #     shift_vector2 = np.array([0, 3.5, 0])
 
-        s3 = 1920
-        num_points3 = 195
-        shift_vector3 = np.array([0.0, 0, 0])
+    #     s3 = 1920
+    #     num_points3 = 195
+    #     shift_vector3 = np.array([0.0, 0, 0])
 
-        new_points = []
-        for ind, waypoint in enumerate(waypoints):
-            p = waypoint
-            if ind >= start_ind and ind < end_ind:
-                p = self.point_plus_vec(p, step_vector * (end_ind - ind))
-                # p = self.point_plus_vec(p, step_vector * (end_ind - ind))
-            if ind >= s2 and ind < s2 + num_points2:
-                p = self.point_plus_vec(p, shift_vector2)
-            if ind >= s3 and ind < s3 + num_points3:
-                p = self.point_plus_vec(p, shift_vector3)
-            new_points.append(p)
-        return new_points
+    #     new_points = []
+    #     for ind, waypoint in enumerate(waypoints):
+    #         p = waypoint
+    #         if ind >= start_ind and ind < end_ind:
+    #             p = self.point_plus_vec(p, step_vector * (end_ind - ind))
+    #             # p = self.point_plus_vec(p, step_vector * (end_ind - ind))
+    #         if ind >= s2 and ind < s2 + num_points2:
+    #             p = self.point_plus_vec(p, shift_vector2)
+    #         if ind >= s3 and ind < s3 + num_points3:
+    #             p = self.point_plus_vec(p, shift_vector3)
+    #         new_points.append(p)
+    #     return new_points
 
     def point_plus_vec(self, waypoint, vector):
         new_location = waypoint.location + vector
@@ -173,31 +174,31 @@ class RoarCompetitionSolution:
                                                 lane_width=waypoint.lane_width)
 
 
-    def modified_points_also_bad(self, waypoints):
-        new_points = []
-        for ind, waypoint in enumerate(waypoints):
-            if ind >= 1962 and ind <= 2027:
-                new_points.append(self.new_point(waypoint, self.new_y(waypoint.location[0])))
-            else:
-                new_points.append(waypoint)
-        return new_points
+    # def modified_points_also_bad(self, waypoints):
+    #     new_points = []
+    #     for ind, waypoint in enumerate(waypoints):
+    #         if ind >= 1962 and ind <= 2027:
+    #             new_points.append(self.new_point(waypoint, self.new_y(waypoint.location[0])))
+    #         else:
+    #             new_points.append(waypoint)
+    #     return new_points
     
 
-    def new_x(self, waypoint, new_x):
-        new_location = np.array([new_x, waypoint.location[1], waypoint.location[2]])
-        return roar_py_interface.RoarPyWaypoint(location=new_location, 
-                                                roll_pitch_yaw=waypoint.roll_pitch_yaw, 
-                                                lane_width=waypoint.lane_width)
-    def new_point(self, waypoint, new_y):
-        new_location = np.array([waypoint.location[0], new_y, waypoint.location[2]])
-        return roar_py_interface.RoarPyWaypoint(location=new_location, 
-                                                roll_pitch_yaw=waypoint.roll_pitch_yaw, 
-                                                lane_width=waypoint.lane_width)
-    def new_y(self, x):
+    # def new_x(self, waypoint, new_x):
+    #     new_location = np.array([new_x, waypoint.location[1], waypoint.location[2]])
+    #     return roar_py_interface.RoarPyWaypoint(location=new_location, 
+    #                                             roll_pitch_yaw=waypoint.roll_pitch_yaw, 
+    #                                             lane_width=waypoint.lane_width)
+    # def new_point(self, waypoint, new_y):
+    #     new_location = np.array([waypoint.location[0], new_y, waypoint.location[2]])
+    #     return roar_py_interface.RoarPyWaypoint(location=new_location, 
+    #                                             roll_pitch_yaw=waypoint.roll_pitch_yaw, 
+    #                                             lane_width=waypoint.lane_width)
+    # def new_y(self, x):
 
-        y = -math.sqrt(102**2 - (x + 210)**2) - 962
-        #print(str(x) + ',' + str(y))
-        return y
+    #     y = -math.sqrt(102**2 - (x + 210)**2) - 962
+    #     #print(str(x) + ',' + str(y))
+    #     return y
         
         # a=0.000322627
         # b=2.73377
@@ -261,12 +262,7 @@ class RoarCompetitionSolution:
             "target_gear": gear
         }
 
-        # print("--- " + str(throttle) + " " + str(brake) 
-        #             + " steer " + str(steer_control)
-        #             + " loc: " + str(vehicle_location)
-        #             + " cur_ind: " + str(self.current_waypoint_idx)
-        #             + " cur_sec: " + str(self.current_section)
-        #             ) 
+
 
 
         await self.vehicle.apply_action(control)
@@ -785,7 +781,7 @@ class ThrottleController():
                 points.append(end)  #store waypoint end
                 dist.append(curr_dist)  #add distance 
             start = end  #update the new start
-            if len(points) >= len(self.target_distance):   #if the number of poitns is > the intended target distance, break
+            if len(points) >= len(self.target_distance):   #if the number of points is > the intended target distance, break
                 break
 
         #self.dprint("wp dist " +  str(dist))
@@ -1284,6 +1280,210 @@ SEC_12_WAYPOINTS = [
   new_x_y(-282.1494140625, 393.758056640625)
 ]
 
+#new points for testing purposes 
+
+SEC_1_WAYPOINTS = [   
+ new_x_y(-283.79998779296875, 391.6999816894531),
+ new_x_y(-284.6494140625, 393.758056640625),
+ new_x_y(-289.4931335449219, 407.9544677734375),
+ new_x_y(-290.13897705078125, 409.8473205566406),
+ new_x_y(-290.7847900390625, 411.74017333984375),
+ new_x_y(-291.4306335449219, 413.633056640625),
+ new_x_y(-292.0764465332031, 415.5259094238281),
+ new_x_y(-292.7222900390625, 417.41876220703125),
+ new_x_y(-293.36810302734375, 419.3116149902344),
+ new_x_y(-294.0139465332031, 421.2044677734375),
+ new_x_y(-294.6597595214844, 423.0973205566406),
+ new_x_y(-295.30560302734375, 424.99017333984375),
+ new_x_y(-295.951416015625, 426.883056640625),
+ new_x_y(-296.5972595214844, 428.7759094238281),
+ new_x_y(-297.2430725097656, 430.66876220703125),
+ new_x_y(-297.888916015625, 432.5616149902344),
+ new_x_y(-298.53472900390625, 434.4544677734375),
+ new_x_y(-299.1805725097656, 436.3473205566406),
+ new_x_y(-299.8263854980469, 438.24017333984375),
+ new_x_y(-300.41998291015625, 439.97998046875),
+ new_x_y(-301.0658264160156, 441.8728332519531),
+ new_x_y(-301.7116394042969, 443.76568603515625),
+ new_x_y(-302.35748291015625, 445.6585388183594),
+ new_x_y(-303.0032958984375, 447.5513916015625),
+ new_x_y(-303.6491394042969, 449.44427490234375),
+ new_x_y(-304.2949523925781, 451.3371276855469),
+ new_x_y(-304.9407958984375, 453.22998046875),
+ new_x_y(-305.58660888671875, 455.1228332519531),
+ new_x_y(-306.2324523925781, 457.01568603515625),
+ new_x_y(-306.8782653808594, 458.9085388183594),
+ new_x_y(-307.52410888671875, 460.8013916015625),
+ new_x_y(-308.169921875, 462.6942443847656),
+ new_x_y(-308.8157653808594, 464.5871276855469),
+ new_x_y(-309.4615783691406, 466.47998046875),
+ new_x_y(-310.10736083984375, 468.37286376953125),
+ new_x_y(-310.746337890625, 470.26800537109375),
+ new_x_y(-311.374267578125, 472.1669006347656),
+ new_x_y(-311.9910583496094, 474.06939697265625),
+ new_x_y(-312.5967712402344, 475.9754638671875),
+ new_x_y(-313.1913146972656, 477.88507080078125),
+ new_x_y(-313.7746887207031, 479.798095703125),
+ new_x_y(-314.3468933105469, 481.7144775390625),
+ new_x_y(-314.90789794921875, 483.6341857910156),
+ new_x_y(-315.4576721191406, 485.55712890625),
+ new_x_y(-315.9962158203125, 487.4832458496094),
+ new_x_y(-316.52349853515625, 489.4124755859375),
+ new_x_y(-317.03948974609375, 491.34478759765625),
+ new_x_y(-317.544189453125, 493.280029296875),
+ new_x_y(-318.03759765625, 495.2182312011719),
+ new_x_y(-318.5196533203125, 497.1592712402344),
+ new_x_y(-318.9903869628906, 499.10308837890625),
+ new_x_y(-319.4497375488281, 501.0495910644531),
+ new_x_y(-319.8977355957031, 502.998779296875),
+ new_x_y(-320.3343200683594, 504.9505615234375),
+ new_x_y(-320.759521484375, 506.9048156738281),
+ new_x_y(-321.17327880859375, 508.8615417480469),
+ new_x_y(-321.57562255859375, 510.8206787109375),
+ new_x_y(-321.96649169921875, 512.7821044921875),
+ new_x_y(-322.3459167480469, 514.7457885742188),
+ new_x_y(-322.7138671875, 516.7116088867188),
+ new_x_y(-323.0703125, 518.6796264648438),
+ new_x_y(-323.4152526855469, 520.649658203125),
+ new_x_y(-323.74871826171875, 522.6216430664062),
+ new_x_y(-324.07061767578125, 524.5955810546875),
+ new_x_y(-324.3810119628906, 526.5712890625),
+ new_x_y(-324.678466796875, 528.549072265625),
+ new_x_y(-324.96136474609375, 530.5289916992188),
+ new_x_y(-325.22967529296875, 532.5109252929688),
+ new_x_y(-325.4833984375, 534.4947509765625),
+ new_x_y(-325.7225036621094, 536.4804077148438),
+ new_x_y(-325.947021484375, 538.4677124023438),
+ new_x_y(-326.1568908691406, 540.4566650390625),
+ new_x_y(-326.3521423339844, 542.4471435546875),
+ new_x_y(-326.53271484375, 544.43896484375),
+ new_x_y(-326.6986389160156, 546.4320678710938),
+ new_x_y(-326.84991455078125, 548.4263305664062),
+ new_x_y(-326.9864807128906, 550.421630859375),
+ new_x_y(-327.1083679199219, 552.4179077148438),
+ new_x_y(-327.215576171875, 554.4150390625),
+ new_x_y(-327.30810546875, 556.4129028320312),
+ new_x_y(-327.3858947753906, 558.411376953125),
+ new_x_y(-327.4490051269531, 560.410400390625),
+ new_x_y(-327.49737548828125, 562.4097900390625),
+ new_x_y(-327.53106689453125, 564.4094848632812),
+ new_x_y(-327.550048828125, 566.409423828125),
+ new_x_y(-327.5542907714844, 568.409423828125),
+ new_x_y(-327.5438232421875, 570.4093627929688),
+ new_x_y(-327.5186462402344, 572.4092407226562),
+ new_x_y(-327.478759765625, 574.4088134765625),
+ new_x_y(-327.42413330078125, 576.4080810546875),
+ new_x_y(-327.3548278808594, 578.4068603515625),
+ new_x_y(-327.27081298828125, 580.4050903320312),
+ new_x_y(-327.1720886230469, 582.4026489257812),
+ new_x_y(-327.0586853027344, 584.3994140625),
+ new_x_y(-326.93060302734375, 586.3953247070312),
+ new_x_y(-326.7931823730469, 588.3905639648438),
+ new_x_y(-326.6556701660156, 590.3858032226562),
+ new_x_y(-326.51812744140625, 592.381103515625),
+ new_x_y(-326.3805847167969, 594.3763427734375),
+ new_x_y(-326.2430725097656, 596.37158203125),
+ new_x_y(-326.10552978515625, 598.3668823242188),
+ new_x_y(-325.9679870605469, 600.3621215820312),
+ new_x_y(-325.8304748535156, 602.357421875),
+ new_x_y(-325.6914367675781, 604.3526000976562),
+ new_x_y(-325.54193115234375, 606.3469848632812),
+ new_x_y(-325.3805236816406, 608.3404541015625),
+ new_x_y(-325.2071838378906, 610.3329467773438),
+ new_x_y(-325.02197265625, 612.3243408203125),
+ new_x_y(-324.8248291015625, 614.3145751953125),
+ new_x_y(-324.6158447265625, 616.3036499023438),
+ new_x_y(-324.3949279785156, 618.2913818359375),
+ new_x_y(-324.16217041015625, 620.27783203125),
+ new_x_y(-323.91754150390625, 622.2628173828125),
+ new_x_y(-323.6610412597656, 624.2462768554688),
+ new_x_y(-323.3927001953125, 626.2282104492188),
+ new_x_y(-323.112548828125, 628.2084350585938),
+ new_x_y(-322.8205261230469, 630.18701171875),
+ new_x_y(-322.5167236328125, 632.163818359375),
+ new_x_y(-322.2010803222656, 634.1387329101562),
+ new_x_y(-321.8736572265625, 636.1117553710938),
+ new_x_y(-321.5344543457031, 638.082763671875),
+ new_x_y(-321.1834716796875, 640.0517578125),
+ new_x_y(-320.82073974609375, 642.0185546875),
+ new_x_y(-320.4462585449219, 643.9832153320312),
+ new_x_y(-320.06005859375, 645.945556640625),
+ new_x_y(-319.662109375, 647.9055786132812),
+ new_x_y(-319.2524719238281, 649.8631591796875),
+ new_x_y(-318.8311462402344, 651.8182373046875),
+ new_x_y(-318.3981628417969, 653.7708129882812),
+ new_x_y(-317.9534912109375, 655.7207641601562),
+ new_x_y(-317.4971923828125, 657.6680297851562),
+ new_x_y(-317.029052734375, 659.6124877929688),
+ new_x_y(-316.5418395996094, 661.5521850585938),
+ new_x_y(-316.03179931640625, 663.486083984375),
+ new_x_y(-315.4990234375, 665.4137573242188),
+ new_x_y(-314.943603515625, 667.3350830078125),
+ new_x_y(-314.36553955078125, 669.2496948242188),
+ new_x_y(-313.7650146484375, 671.1574096679688),
+ new_x_y(-313.14202880859375, 673.0579223632812),
+ new_x_y(-312.4966735839844, 674.950927734375),
+ new_x_y(-311.8291015625, 676.836181640625),
+ new_x_y(-311.13934326171875, 678.7135009765625),
+ new_x_y(-310.42755126953125, 680.58251953125),
+ new_x_y(-309.69378662109375, 682.4430541992188),
+ new_x_y(-308.9381103515625, 684.2947998046875),
+ new_x_y(-308.16070556640625, 686.1375122070312),
+ new_x_y(-307.3616638183594, 687.970947265625),
+ new_x_y(-306.54107666015625, 689.7947998046875),
+ new_x_y(-305.69903564453125, 691.60888671875),
+ new_x_y(-304.835693359375, 693.4129638671875),
+ new_x_y(-303.951171875, 695.2067260742188),
+ new_x_y(-303.04559326171875, 696.9899291992188),
+ new_x_y(-302.1190490722656, 698.7623291015625),
+ new_x_y(-301.17169189453125, 700.5237426757812),
+ new_x_y(-300.20367431640625, 702.2738647460938),
+ new_x_y(-299.215087890625, 704.012451171875),
+ new_x_y(-298.2060852050781, 705.7392578125),
+ new_x_y(-297.17681884765625, 707.4540405273438),
+ new_x_y(-296.12744140625, 709.1566162109375),
+ new_x_y(-295.0580749511719, 710.8466796875),
+ new_x_y(-293.9797668457031, 712.5310668945312),
+ new_x_y(-292.9014587402344, 714.2155151367188),
+ new_x_y(-291.8224182128906, 715.8994140625),
+ new_x_y(-290.7375793457031, 717.5797119140625),
+ new_x_y(-289.6460266113281, 719.2554931640625),
+ new_x_y(-288.54779052734375, 720.927001953125),
+ new_x_y(-287.44287109375, 722.5941162109375),
+ new_x_y(-286.331298828125, 724.2567138671875),
+ new_x_y(-285.21307373046875, 725.9149169921875),
+ new_x_y(-284.0882568359375, 727.568603515625),
+ new_x_y(-282.956787109375, 729.2178344726562),
+ new_x_y(-281.8187561035156, 730.8624877929688),
+ new_x_y(-280.6741638183594, 732.5025634765625),
+ new_x_y(-279.52301025390625, 734.1380615234375),
+ new_x_y(-278.3653259277344, 735.7689208984375),
+ new_x_y(-277.20111083984375, 737.3951416015625),
+ new_x_y(-276.0304260253906, 739.0167236328125),
+ new_x_y(-274.8532409667969, 740.633544921875),
+ new_x_y(-273.66961669921875, 742.2457275390625),
+ new_x_y(-272.47955322265625, 743.8531494140625),
+ new_x_y(-271.2830505371094, 745.4557495117188),
+ new_x_y(-270.0801696777344, 747.0535888671875),
+ new_x_y(-268.8708801269531, 748.6466064453125),
+ new_x_y(-267.6552429199219, 750.2347412109375),
+ new_x_y(-266.4332580566406, 751.8179931640625),
+ new_x_y(-265.2049560546875, 753.3963623046875),
+ new_x_y(-263.9703674316406, 754.9698486328125),
+ new_x_y(-262.7294616699219, 756.538330078125),
+ new_x_y(-261.48297119140625, 758.1024169921875),
+ new_x_y(-260.2355041503906, 759.6657104492188),
+ new_x_y(-258.9880676269531, 761.2289428710938),
+ new_x_y(-257.7406005859375, 762.792236328125),
+ new_x_y(-256.4931640625, 764.3555297851562),
+ new_x_y(-255.24571228027344, 765.9188232421875),
+ new_x_y(-253.99826049804688, 767.4821166992188),
+ new_x_y(-252.7508087158203, 769.04541015625),
+ new_x_y(-251.49908447265625, 770.605224609375),
+ new_x_y(-250.23558044433594, 772.1555786132812),
+ new_x_y(-248.960205078125, 773.6961669921875)
+]
+
 
 # Section 0: 319
 # Section 1: 175
@@ -1327,3 +1527,4 @@ SEC_12_WAYPOINTS = [
 # end of the loop
 # done
 # Solution finished in 347.2500000000506 seconds
+#testing  
