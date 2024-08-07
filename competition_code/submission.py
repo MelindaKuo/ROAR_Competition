@@ -40,6 +40,9 @@ def new_x_y(x, y):
                                                 roll_pitch_yaw=np.array([0,0,0]), 
                                                 lane_width=5)
 
+
+
+
 class RoarCompetitionSolution:
     def __init__(
         self,
@@ -82,14 +85,19 @@ class RoarCompetitionSolution:
         self.section_start_ticks = 0
         self.current_section = -1
         self.total_waypoints = self.maneuverable_waypoints.copy()
+        self.avg_waypoint_index = -1
+        self.lap_count = 0
+        self.total_waypoint_sections = []
 
-        with open('info.txt', 'a') as file:
-            file.write('Total_waypoints before length:' + str(len(self.total_waypoints)))
-            file.write('\n')
-            file.write('Maneuverable Waypoints length: ' + str(len(self.maneuverable_waypoints)))
-            file.write('\n')
-            file.close()
+        # with open('info.txt', 'a') as file:
+        #     file.write('Total_waypoints before length:' + str(len(self.total_waypoints)))
+        #     file.write('\n')
+        #     file.write('Maneuverable Waypoints length: ' + str(len(self.maneuverable_waypoints)))
+        #     file.write('\n')
+        #     file.close()
 
+        # with open('tracker.txt', 'a') as file:
+        #     file.write("Maneuverable waypoints before:  " + str(len(self.maneuverable_waypoints))+'\n')
 
 
     async def initialize(self) -> None:
@@ -98,6 +106,7 @@ class RoarCompetitionSolution:
         #self.section_indeces = [indexes_per_section * i for i in range(0, num_sections)]
         # self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2662, 2770]
         self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2592, 2770]
+        self.total_waypoint_sections = self.section_indeces.copy()
         print(f"1 lap length: {len(self.maneuverable_waypoints)}")
         print(f"indexes: {self.section_indeces}")
         # Receive location, rotation and velocity data 
@@ -111,69 +120,8 @@ class RoarCompetitionSolution:
             self.current_waypoint_idx,
             self.maneuverable_waypoints
         )
-
-    # def modified_points(self, waypoints):
-    #     new_points = []
-    #     for ind, waypoint in enumerate(waypoints):
-    #         if ind == 1964:
-    #             new_points.append(self.new_x(waypoint, -151))
-    #         elif ind == 1965:
-    #             new_points.append(self.new_x(waypoint, -153))
-    #         elif ind == 1966:
-    #             new_points.append(self.new_x(waypoint, -155))
-    #         else:
-    #             new_points.append(waypoint)
-    #     return new_points
         
-    # def modified_points_bad(self, waypoints):
-    #     end_ind = 1964
-    #     num_points = 50
-    #     start_ind = end_ind - num_points
-    #     shift_vector = np.array([0.5, 0, 0])
-    #     step_vector = shift_vector / num_points
 
-    #     s2 = 1965
-    #     num_points2 = 150
-    #     shift_vector2 = np.array([0, 2.0, 0])
-
-
-    #     new_points = []
-    #     for ind, waypoint in enumerate(waypoints):
-    #         p = waypoint
-    #         if ind >= start_ind and ind < end_ind:
-    #             p = self.point_plus_vec(p, step_vector * (ind - start_ind))
-    #         if ind >= s2 and ind < s2 + num_points2:
-    #              p = self.point_plus_vec(p, shift_vector2)
-    #         new_points.append(p)
-    #     return new_points
-
-    # def modified_points_good(self, waypoints):
-    #     start_ind = 1920
-    #     num_points = 100
-    #     end_ind = start_ind + num_points
-    #     shift_vector = np.array([2.8, 0, 0])
-    #     step_vector = shift_vector / num_points
-
-    #     s2 = 1965
-    #     num_points2 = 150
-    #     shift_vector2 = np.array([0, 3.5, 0])
-
-    #     s3 = 1920
-    #     num_points3 = 195
-    #     shift_vector3 = np.array([0.0, 0, 0])
-
-    #     new_points = []
-    #     for ind, waypoint in enumerate(waypoints):
-    #         p = waypoint
-    #         if ind >= start_ind and ind < end_ind:
-    #             p = self.point_plus_vec(p, step_vector * (end_ind - ind))
-    #             # p = self.point_plus_vec(p, step_vector * (end_ind - ind))
-    #         if ind >= s2 and ind < s2 + num_points2:
-    #             p = self.point_plus_vec(p, shift_vector2)
-    #         if ind >= s3 and ind < s3 + num_points3:
-    #             p = self.point_plus_vec(p, shift_vector3)
-    #         new_points.append(p)
-    #     return new_points
 
     def point_plus_vec(self, waypoint, vector):
         new_location = waypoint.location + vector
@@ -182,37 +130,6 @@ class RoarCompetitionSolution:
                                                 roll_pitch_yaw=waypoint.roll_pitch_yaw,
                                                 lane_width=waypoint.lane_width)
 
-
-    # def modified_points_also_bad(self, waypoints):
-    #     new_points = []
-    #     for ind, waypoint in enumerate(waypoints):
-    #         if ind >= 1962 and ind <= 2027:
-    #             new_points.append(self.new_point(waypoint, self.new_y(waypoint.location[0])))
-    #         else:
-    #             new_points.append(waypoint)
-    #     return new_points
-    
-
-    # def new_x(self, waypoint, new_x):
-    #     new_location = np.array([new_x, waypoint.location[1], waypoint.location[2]])
-    #     return roar_py_interface.RoarPyWaypoint(location=new_location, 
-    #                                             roll_pitch_yaw=waypoint.roll_pitch_yaw, 
-    #                                             lane_width=waypoint.lane_width)
-    # def new_point(self, waypoint, new_y):
-    #     new_location = np.array([waypoint.location[0], new_y, waypoint.location[2]])
-    #     return roar_py_interface.RoarPyWaypoint(location=new_location, 
-    #                                             roll_pitch_yaw=waypoint.roll_pitch_yaw, 
-    #                                             lane_width=waypoint.lane_width)
-    # def new_y(self, x):
-
-    #     y = -math.sqrt(102**2 - (x + 210)**2) - 962
-    #     #print(str(x) + ',' + str(y))
-    #     return y
-        
-        # a=0.000322627
-        # b=2.73377
-        # y = a * ( (abs(x + 206))**b ) - 1063.5
-        # return y
 
     async def step(
         self
@@ -240,27 +157,44 @@ class RoarCompetitionSolution:
 
         # compute and print section timing
         for i, section_ind in enumerate(self.section_indeces):
-            if section_ind -2 <= self.current_waypoint_idx \
-                and self.current_waypoint_idx <= section_ind + 2 \
-                    and i != self.current_section:
+            if section_ind - 2 <= self.current_waypoint_idx <= section_ind + 2 and i != self.current_section:
                 elapsed_ticks = self.num_ticks - self.section_start_ticks
                 self.section_start_ticks = self.num_ticks
-                self.current_section = i
+                if self.lap_count >1:
+                    self.update_waypoints(self.current_section)
+                    print("update waypoints for lap 1+")
+
+                else: 
+                    if self.current_section >= 2:
+                        previous_man_amt = str(len(self.maneuverable_waypoints))
+                        
+                        self.update_waypoints(self.current_section)
+                        new_man_amt = str(len(self.maneuverable_waypoints))
+                        print('updating waypoints: previous #waypoints =' + previous_man_amt + "curr amt: " + new_man_amt)
+                self.current_section = i 
+                # print(len(self.total_waypoints))
+                # print(len(self.maneuverable_waypoints))
                 print(f"Section {i}: {elapsed_ticks}")
-                if self.current_section == 12:
-                    with open('info.txt', 'a') as file:
-                        file.write("Sec 12: " + str(len(self.total_waypoints)))
-                        file.write('\n')
-                        file.close()
+                # print(self.total_waypoint_sections)
+                
+
+
+                        
+                # if self.current_section == 12:
+                #     with open('info.txt', 'a') as file:
+                #         file.write("Sec 12: " + str(len(self.total_waypoints)))
+                #         file.write('\n')
+                #         file.close()
+        
 
         new_waypoint_index = self.get_lookahead_index(current_speed_kmh)
         waypoint_to_follow = self.next_waypoint_smooth(current_speed_kmh)
-        if new_waypoint_index <10:
-            with open('points.txt', 'a') as file:
-                for line in self.total_waypoints:
-                    file.write(f"{line}\n")
+        # if new_waypoint_index <10:
+        #     with open('points.txt', 'a') as file:
+        #         for line in self.total_waypoints:
+        #             file.write(f"{line}\n")
 
-        self.handle_waypoints(new_waypoint_index, waypoint_to_follow)
+        self.handle_waypoints(self.avg_waypoint_index, waypoint_to_follow)
         #waypoint_to_follow = self.maneuverable_waypoints[new_waypoint_index]
 
         # Proportional controller to steer the vehicle
@@ -281,15 +215,59 @@ class RoarCompetitionSolution:
             "reverse": 0,
             "target_gear": gear
         }
-
-
-
-
         await self.vehicle.apply_action(control)
         return control
 
+
+    def update__section_indeces(self):
+        difference = len(self.total_waypoints) - len(self.maneuverable_waypoints)
+        # Update section_indeces
+        # Update total_waypoint_sections
+        for i in range(len(self.total_waypoint_sections)):
+            self.total_waypoint_sections[i] = self.section_indeces[i] + difference
+
+    
     def handle_waypoints(self, index, waypoint):
         self.total_waypoints.insert(index, waypoint)
+    
+    def update_waypoints(self, curr_section):
+            # Determine the section to be updated based on the current section
+            if curr_section == 0:
+                target_section = 11
+            elif curr_section == 1:
+                target_section = 12
+            else:
+                target_section = curr_section - 2
+
+            # Calculate the start and end indices for the target section in total_waypoints
+            sec_start = self.total_waypoint_sections[target_section]
+            # self.update__section_indeces()
+            sec_end = self.total_waypoint_sections[target_section + 1] 
+
+            # Extract the waypoints for the target section from total_waypoints
+            new_waypoints = self.total_waypoints[sec_start:sec_end]
+            numNewWaypoints = len(new_waypoints)
+            print(numNewWaypoints)
+
+            # Update maneuverable waypoints for the target section
+            man_start = self.section_indeces[target_section]
+            man_end = self.section_indeces[target_section + 1]
+            numManBefore = man_end-man_start
+            self.maneuverable_waypoints[man_start:] =  new_waypoints + self.maneuverable_waypoints[man_start+1:]
+
+            # Adjust the section indices
+            self.update__section_indeces()
+
+            for i in range(len(self.section_indeces)):
+                self.section_indeces[i] = self.total_waypoint_sections[i]
+
+            print(self.section_indeces)
+
+            # Adjust the current waypoint index if it falls within the updated section
+            
+            self.current_waypoint_idx += self.current_waypoint_idx + numNewWaypoints
+
+
 
     def get_lookahead_value(self, speed):
         speed_to_lookahead_dict = {
@@ -424,6 +402,7 @@ class RoarCompetitionSolution:
             target_waypoint = self.average_point(current_speed)
         else:
             new_waypoint_index = self.get_lookahead_index(current_speed)
+            self.avg_waypoint_index = new_waypoint_index
             target_waypoint = self.maneuverable_waypoints[new_waypoint_index]
         return target_waypoint
 
@@ -440,7 +419,7 @@ class RoarCompetitionSolution:
             # num_points = lookahead_value
             # num_points = 1
         start_index_for_avg = (next_waypoint_index - (num_points // 2)) % len(self.maneuverable_waypoints)
-
+        
         next_waypoint = self.maneuverable_waypoints[next_waypoint_index]
         next_location = next_waypoint.location
   
@@ -450,6 +429,7 @@ class RoarCompetitionSolution:
                                   (self.maneuverable_waypoints[i].location for i in sample_points))
             num_points = len(sample_points)
             new_location = location_sum / num_points
+            
             shift_distance = np.linalg.norm(next_location - new_location)
             max_shift_distance = 2.0
             if self.current_section in [1,2]:
@@ -474,9 +454,15 @@ class RoarCompetitionSolution:
             #       + " new_loc: " + str(new_location) + " shift:" + str(shift_distance)
             #       + " num_points: " + str(num_points) + " start_ind:" + str(start_index_for_avg)
             #       + " curr_speed: " + str(current_speed))
+            distances = [np.linalg.norm(new_location - wp.location) for wp in self.maneuverable_waypoints]
+            closest_indices = sorted(range(len(distances)), key=lambda i: distances[i])[:2]
+            closest_indices.sort()
+
+            self.avg_waypoint_index = closest_indices[0] + 1  # Insert after the first closest waypoint
 
         else:
             target_waypoint =  self.maneuverable_waypoints[next_waypoint_index]
+            self.avg_waypoint_index = next_waypoint_index
 
         return target_waypoint
 
