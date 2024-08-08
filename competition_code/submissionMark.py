@@ -9,46 +9,35 @@ from typing import List, Tuple, Dict, Optional
 import math
 import numpy as np
 import roar_py_interface
-import roar_py_carla
-import atexit
 
-#radians
+
 def normalize_rad(rad : float):
     return (rad + np.pi) % (2 * np.pi) - np.pi
 
-#Distance from one waypoint to another
 def distance_p_to_p(p1: roar_py_interface.RoarPyWaypoint, p2: roar_py_interface.RoarPyWaypoint):
     return np.linalg.norm(p2.location[:2] - p1.location[:2])
 
-#sort the waypoints
 def filter_waypoints(location : np.ndarray, current_idx: int, waypoints : List[roar_py_interface.RoarPyWaypoint]) -> int:
-    #from current location to closest waypoint
     def dist_to_waypoint(waypoint : roar_py_interface.RoarPyWaypoint):
         return np.linalg.norm(
             location[:2] - waypoint.location[:2]
         )
-    #Loop to find closest waypoint
     for i in range(current_idx, len(waypoints) + current_idx):
         if dist_to_waypoint(waypoints[i%len(waypoints)]) < 3:
             return i % len(waypoints)
     return current_idx
 
-
-#create the new waypoint
 def new_x_y(x, y):
         new_location = np.array([x, y, 0])
         return roar_py_interface.RoarPyWaypoint(location=new_location, 
                                                 roll_pitch_yaw=np.array([0,0,0]), 
                                                 lane_width=5)
 
-
-
-
 class RoarCompetitionSolution:
     def __init__(
         self,
         maneuverable_waypoints: List[roar_py_interface.RoarPyWaypoint],
-        vehicle : roar_py_interface.RoarPyActor,    
+        vehicle : roar_py_interface.RoarPyActor,
         camera_sensor : roar_py_interface.RoarPyCameraSensor = None,
         location_sensor : roar_py_interface.RoarPyLocationInWorldSensor = None,
         velocity_sensor : roar_py_interface.RoarPyVelocimeterSensor = None,
@@ -71,7 +60,6 @@ class RoarCompetitionSolution:
                 + maneuverable_waypoints[endInd_8:startInd_12] \
                 + SEC_12_WAYPOINTS
         # self.maneuverable_waypoints = self.modified_points(maneuverable_waypoints)
-        
         self.vehicle = vehicle
         self.camera_sensor = camera_sensor
         self.location_sensor = location_sensor
@@ -85,29 +73,6 @@ class RoarCompetitionSolution:
         self.num_ticks = 0
         self.section_start_ticks = 0
         self.current_section = -1
-        self.total_waypoints = self.maneuverable_waypoints.copy()
-        self.avg_waypoint_index = -1
-        self.lap_count = 0
-        self.total_waypoint_sections = []
-        self.waypoints_updated = False
-        self.previous_waypoint_total = 0
-        # atexit.register(self.cleanup)
-        
-
-        # with open('info.txt', 'a') as file:
-        #     file.write('Total_waypoints before length:' + str(len(self.total_waypoints)))
-        #     file.write('\n')
-        #     file.write('Maneuverable Waypoints length: ' + str(len(self.maneuverable_waypoints)))
-        #     file.write('\n')
-        #     file.close()
-
-        # with open('tracker.txt', 'a') as file:
-        #     file.write("Maneuverable waypoints before:  " + str(len(self.maneuverable_waypoints))+'\n')
-    # def cleanup(self):
-    #     with open('points.txt', 'w') as file:
-    #         for waypoint in self.total_waypoints:
-    #             file.write(f"{waypoint}\n")
-    #     print("Waypoints written to 'points.txt'")
 
     async def initialize(self) -> None:
         num_sections = 12
@@ -115,9 +80,9 @@ class RoarCompetitionSolution:
         #self.section_indeces = [indexes_per_section * i for i in range(0, num_sections)]
         # self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2662, 2770]
         self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2592, 2770]
-        self.total_waypoint_sections = self.section_indeces.copy()
         print(f"1 lap length: {len(self.maneuverable_waypoints)}")
         print(f"indexes: {self.section_indeces}")
+
         # Receive location, rotation and velocity data 
         vehicle_location = self.location_sensor.get_last_gym_observation()
         vehicle_rotation = self.rpy_sensor.get_last_gym_observation()
@@ -130,12 +95,68 @@ class RoarCompetitionSolution:
             self.maneuverable_waypoints
         )
 
-        	
-        # starting_loc = np.array([-251.49908447265625, 770.605224609375, 0])
+    # def modified_points(self, waypoints):
+    #     new_points = []
+    #     for ind, waypoint in enumerate(waypoints):
+    #         if ind == 1964:
+    #             new_points.append(self.new_x(waypoint, -151))
+    #         elif ind == 1965:
+    #             new_points.append(self.new_x(waypoint, -153))
+    #         elif ind == 1966:
+    #             new_points.append(self.new_x(waypoint, -155))
+    #         else:
+    #             new_points.append(waypoint)
+    #     return new_points
+        
+    def modified_points_bad(self, waypoints):
+        end_ind = 1964
+        num_points = 50
+        start_ind = end_ind - num_points
+        shift_vector = np.array([0.5, 0, 0])
+        step_vector = shift_vector / num_points
 
-        # self.total_waypoints.insert(0,roar_py_interface.RoarPyWaypoint(location=starting_loc, 
-        #                                         roll_pitch_yaw=np.array([0,0,0]), 
-        #                                         lane_width=5))
+        s2 = 1965
+        num_points2 = 150
+        shift_vector2 = np.array([0, 2.0, 0])
+
+
+        new_points = []
+        for ind, waypoint in enumerate(waypoints):
+            p = waypoint
+            if ind >= start_ind and ind < end_ind:
+                p = self.point_plus_vec(p, step_vector * (ind - start_ind))
+            if ind >= s2 and ind < s2 + num_points2:
+                 p = self.point_plus_vec(p, shift_vector2)
+            new_points.append(p)
+        return new_points
+
+    def modified_points_good(self, waypoints):
+        start_ind = 1920
+        num_points = 100
+        end_ind = start_ind + num_points
+        shift_vector = np.array([2.8, 0, 0])
+        step_vector = shift_vector / num_points
+
+        s2 = 1965
+        num_points2 = 150
+        shift_vector2 = np.array([0, 3.5, 0])
+
+        s3 = 1920
+        num_points3 = 195
+        shift_vector3 = np.array([0.0, 0, 0])
+
+        new_points = []
+        for ind, waypoint in enumerate(waypoints):
+            p = waypoint
+            if ind >= start_ind and ind < end_ind:
+                p = self.point_plus_vec(p, step_vector * (end_ind - ind))
+                # p = self.point_plus_vec(p, step_vector * (end_ind - ind))
+            if ind >= s2 and ind < s2 + num_points2:
+                p = self.point_plus_vec(p, shift_vector2)
+            if ind >= s3 and ind < s3 + num_points3:
+                p = self.point_plus_vec(p, shift_vector3)
+            new_points.append(p)
+        return new_points
 
     def point_plus_vec(self, waypoint, vector):
         new_location = waypoint.location + vector
@@ -144,6 +165,37 @@ class RoarCompetitionSolution:
                                                 roll_pitch_yaw=waypoint.roll_pitch_yaw,
                                                 lane_width=waypoint.lane_width)
 
+
+    def modified_points_also_bad(self, waypoints):
+        new_points = []
+        for ind, waypoint in enumerate(waypoints):
+            if ind >= 1962 and ind <= 2027:
+                new_points.append(self.new_point(waypoint, self.new_y(waypoint.location[0])))
+            else:
+                new_points.append(waypoint)
+        return new_points
+    
+
+    def new_x(self, waypoint, new_x):
+        new_location = np.array([new_x, waypoint.location[1], waypoint.location[2]])
+        return roar_py_interface.RoarPyWaypoint(location=new_location, 
+                                                roll_pitch_yaw=waypoint.roll_pitch_yaw, 
+                                                lane_width=waypoint.lane_width)
+    def new_point(self, waypoint, new_y):
+        new_location = np.array([waypoint.location[0], new_y, waypoint.location[2]])
+        return roar_py_interface.RoarPyWaypoint(location=new_location, 
+                                                roll_pitch_yaw=waypoint.roll_pitch_yaw, 
+                                                lane_width=waypoint.lane_width)
+    def new_y(self, x):
+
+        y = -math.sqrt(102**2 - (x + 210)**2) - 962
+        #print(str(x) + ',' + str(y))
+        return y
+        
+        # a=0.000322627
+        # b=2.73377
+        # y = a * ( (abs(x + 206))**b ) - 1063.5
+        # return y
 
     async def step(
         self
@@ -169,75 +221,18 @@ class RoarCompetitionSolution:
             self.maneuverable_waypoints
         )
 
-
         # compute and print section timing
         for i, section_ind in enumerate(self.section_indeces):
-            if section_ind - 2 <= self.current_waypoint_idx <= section_ind + 2 and i != self.current_section:
+            if section_ind -2 <= self.current_waypoint_idx \
+                and self.current_waypoint_idx <= section_ind + 2 \
+                    and i != self.current_section:
                 elapsed_ticks = self.num_ticks - self.section_start_ticks
                 self.section_start_ticks = self.num_ticks
-                
-
-               
-                self.current_section = i 
-                # print(len(self.total_waypoints))
-                # print(len(self.maneuverable_waypoints))
-
+                self.current_section = i
                 print(f"Section {i}: {elapsed_ticks}")
-                print(self.total_waypoint_sections)
-                if self.current_section == 12:
-                    self.maneuverable_waypoints = self.total_waypoints.copy()
-                    self.section_indeces = self.total_waypoint_sections
-                    for i, section_ind in enumerate(self.section_indeces):
-                        if section_ind - 2 <= self.current_waypoint_idx <= section_ind + 2 and i != self.current_section:     
-                            self.current_section = i 
-                    print(self.section_indeces)
-                    print("copied over")
 
-            
-                # print("Section {i} Total_waypoints added = " + str((len(self.total_waypoints)-self.previous_waypoint_total)))
-                # self.previous_waypoint_total = len(self.total_waypoints)
-                # if self.current_section == 12: 
-                #     self.lap_count +=1
-
-                # print(self.section_indeces)
-        # if self.current_section == 12:
-        #     self.waypoints_updated = False
-        #     self.lap_count+=1
-        # if self.lap_count >1 and not self.waypoints_updated:
-        #         #     self.update_waypoints(self.current_section)
-        #         #     print("update waypoints for lap 1+")
-        #         # else: 
-        #     if self.current_section == 1 and self.current_waypoint_idx >198:
-        #         print(self.current_waypoint_idx)
-        #         self.maneuverable_waypoints = self.total_waypoints
-        #         self.update__section_indeces()
-        #         self.current_waypoint_idx = 205
-                
-        #         print(self.section_indeces)
-        #         print("copied over")
-        #         self.waypoints_updated = True
-                
-
-                    # previous_man_amt = str(len(self.maneuverable_waypoints))
-                    
-                    # self.update_waypoints(self.current_section)
-                    # new_man_amt = str(len(self.maneuverable_waypoints))
-                    # print('updating waypoints: previous #waypoints =' + previous_man_amt + "curr amt: " + new_man_amt)
-
-
-
-                        
-                # if self.current_section == 12:
-                #     with open('info.txt', 'a') as file:
-                #         file.write("Sec 12: " + str(len(self.total_waypoints)))
-                #         file.write('\n')
-                #         file.close()
         new_waypoint_index = self.get_lookahead_index(current_speed_kmh)
         waypoint_to_follow = self.next_waypoint_smooth(current_speed_kmh)
-        # if new_waypoint_index <10:
-
-
-        # self.handle_waypoints(self.avg_waypoint_index, waypoint_to_follow)
         #waypoint_to_follow = self.maneuverable_waypoints[new_waypoint_index]
 
         # Proportional controller to steer the vehicle
@@ -258,173 +253,17 @@ class RoarCompetitionSolution:
             "reverse": 0,
             "target_gear": gear
         }
+
+        # print("--- " + str(throttle) + " " + str(brake) 
+        #             + " steer " + str(steer_control)
+        #             + " loc: " + str(vehicle_location)
+        #             + " cur_ind: " + str(self.current_waypoint_idx)
+        #             + " cur_sec: " + str(self.current_section)
+        #             ) 
+
+
         await self.vehicle.apply_action(control)
-
-        # with open('points.txt', 'w') as file:
-        #     for line in self.total_waypoints:
-        #         file.write(f"{line}\n")
         return control
-
-
-    def update_total_section_indeces(self, section, amount):
-        # if section == 0: 
-        #     print("0-12")
-        # if section == 1: 
-        #     print("1-12")
-        # if section == 2: 
-        #     print("2-12")
-        # if section == 3: 
-        #     print("3-12")
-        # if section == 4: 
-        #     print("4-12")
-        # if section == 5: 
-        #     print("5-12")
-        # if section == 6: 
-        #     print("6-12")
-        # if section == 7: 
-        #     print("7-12")
-        # if section == 8: 
-        #     print("8-12")
-        # if section == 9: 
-        #     print("9-12")
-        # if section == 10: 
-        #     print("10-12")
-        # if section == 11: 
-        #     print("11-12")
-        # if section == 12: 
-        #     print("12-12")
-        for i in range(section, len(self.total_waypoint_sections)):
-            self.total_waypoint_sections[i] += amount
-
-
-    # Update total waypoint sections based on section indices
-
-        # for i, section_ind in enumerate(self.total_waypoint_sections):
-        #         if section_ind - 2 <= self.current_waypoint_idx <= section_ind + 2 and i != self.current_section:
-        #             self.current_section = i
-
-    
-    def handle_waypoints(self, waypoint):
-        nearest_index = -1
-        min_distance = float('inf')
-        for i in range(self.current_waypoint_idx,len(self.total_waypoints)):
-            distance = distance_p_to_p(self.total_waypoints[i], waypoint)
-            if distance < min_distance: 
-                min_distance = distance
-                nearest_index = i
-        self.total_waypoints.insert(nearest_index+1,roar_py_interface.RoarPyWaypoint(location=waypoint.location, 
-                                                roll_pitch_yaw=np.array(waypoint.roll_pitch_yaw), 
-                                                lane_width=waypoint.lane_width))
-        self.total_waypoints = self.remove_duplicate_waypoints(self.total_waypoints)
-        
-        if self.get_section_by_index(nearest_index+1) == 12:
-            print("belongs 12")
-            self.total_waypoint_sections[12]+=1
-        else:
-            self.update_total_section_indeces(self.get_section_by_index(nearest_index+1),1)
-
-    def is_in_section(self, index, section):
-        
-        if section == 0: 
-            section_start = self.section_indeces[12]
-            section_end = self.section_indeces[0]
-        else:
-            section_start = self.section_indeces[section-1]
-            section_end  = self.section_indeces[section]
-
-        return section_start <= index < section_end
-
-
-    def get_section_by_index(self, index):
-        section = -1
-        for section_id in range(len(self.section_indeces)):
-            if section_id > 0:
-                section_start = self.section_indeces[section_id-1] 
-            else :
-                section_start = self.section_indeces[12]
-
-            section_end = self.section_indeces[section_id]
-
-            if section_start <= index < section_end:
-                section = section_id
-        return section
-
-
-
-    def remove_duplicate_waypoints(self, waypoints):
-    # Create a set to store unique locations
-        unique_locations = set()
-        # Create a new list to store the cleaned waypoints
-        cleaned_waypoints = []
-
-        for waypoint in waypoints:
-            # Convert the location to a tuple so it can be added to a set
-            location_tuple = tuple(waypoint.location)
-            
-            # If the location is not in the set, add it to the set and cleaned list
-            if location_tuple not in unique_locations:
-                unique_locations.add(location_tuple)
-                cleaned_waypoints.append(waypoint)
-
-        return cleaned_waypoints
-
-            
-
-    def update_waypoints(self, curr_section):
-        
-            if curr_section == 0:
-                target_section = 12
-            elif curr_section == 1:
-                target_section = 0
-            else:
-                target_section = curr_section - 2
-            if target_section == 0:
-                sec_start=50
-                sec_end = self.total_waypoint_sections[target_section + 1]
-                man_start = 50
-
-            else: 
-            # Calculate the start and end indices for the target section in total_waypoints
-                sec_start = self.total_waypoint_sections[target_section]
-                sec_end = self.total_waypoint_sections[target_section + 1]
-                man_start = self.section_indeces[target_section]
-            # self.update__section_indeces()
-                
-            # Extract the waypoints for the target section from total_waypoints
-            new_waypoints = self.total_waypoints[sec_start:sec_end]
-            numNewWaypoints = len(new_waypoints)
-            
-            # print(numNewWaypoints)
-           
-
-            # Update maneuverable waypoints for the target section
-            
-            man_end = self.section_indeces[target_section + 1]
-            numManBefore = man_end-man_start
-            self.maneuverable_waypoints =  self.maneuverable_waypoints[:man_start] + new_waypoints + self.maneuverable_waypoints[man_start+numNewWaypoints:]
-            self.update__section_indeces()
-            # Adjust the section indices
-            
-            if curr_section != 0: 
-                self.current_waypoint_idx += numNewWaypoints
-
-
-            
-
-            # for i in range(len(self.section_indeces)):
-            #     self.section_indeces[i] = self.total_waypoint_sections[i]
-
-
-            # print(self.section_indeces)
-
-            # Adjust the current waypoint index if it falls within the updated section
-
-            # for i, section_ind in enumerate(self.section_indeces):
-            #     if section_ind - 2 <= self.current_waypoint_idx <= section_ind + 2 and i != self.current_section:
-            #         self.current_section = i
-
-
-
 
     def get_lookahead_value(self, speed):
         speed_to_lookahead_dict = {
@@ -458,111 +297,81 @@ class RoarCompetitionSolution:
     
     def get_lateral_pid_config(self):
         conf = {
-            "30": {
-                "Kp": 1.00,
-                "Kd": 0.03,
-                "Ki": 0.02
-            },
-            "40": {
-                "Kp": 0.90,
-                "Kd": 0.04,
-                "Ki": 0.03
-            },
-            "50": {
-                "Kp": 0.85,
+        "60": {
+                "Kp": 0.8,
                 "Kd": 0.05,
+                "Ki": 0.05
+        },
+        "70": {
+                "Kp": 0.7,
+                "Kd": 0.07,
+                "Ki": 0.07
+        },
+        "80": {
+                "Kp": 0.66,
+                "Kd": 0.08,
+                "Ki": 0.08
+        },
+        "90": {
+                "Kp": 0.63,
+                "Kd": 0.09,
+                "Ki": 0.09
+        },
+        "100": {
+                "Kp": 0.6,
+                "Kd": 0.1,
+                "Ki": 0.1
+        },
+        "120": {
+                "Kp": 0.52,
+                "Kd": 0.1,
+                "Ki": 0.1
+        },
+        "130": {
+                "Kp": 0.51,
+                "Kd": 0.1,
+                "Ki": 0.09
+        },
+        "140": {
+                "Kp": 0.45,
+                "Kd": 0.1,
+                "Ki": 0.09
+        },
+        "160": {
+                "Kp": 0.4,
+                "Kd": 0.05,
+                "Ki": 0.06
+        },
+        "180": {
+                "Kp": 0.28,
+                "Kd": 0.02,
+                "Ki": 0.05
+        },
+        "200": {
+                "Kp": 0.28,
+                "Kd": 0.03,
                 "Ki": 0.04
-            },
-            "60": {
-                "Kp": 0.8034,
-                "Kd": 0.0521,
-                "Ki": 0.0518
-            },
-            "70": {
-                "Kp": 0.7025,
-                "Kd": 0.0698,
-                "Ki": 0.0712
-            },
-            "80": {
-                "Kp": 0.6621,
-                "Kd": 0.0807,
-                "Ki": 0.0804
-            },
-            "90": {
-                "Kp": 0.6289,
-                "Kd": 0.0903,
-                "Ki": 0.0921
-            },
-            "100": {
-                "Kp": 0.6012,
-                "Kd": 0.1005,
-                "Ki": 0.1013
-            },
-            "120": {
-                "Kp": 0.5243,
-                "Kd": 0.0987,
-                "Ki": 0.1004
-            },
-            "130": {
-                "Kp": 0.5114,
-                "Kd": 0.1012,
-                "Ki": 0.0905
-            },
-            "140": {
-                "Kp": 0.4489,
-                "Kd": 0.0995,
-                "Ki": 0.0899
-            },
-            "160": {
-                "Kp": 0.3987,
-                "Kd": 0.0502,
-                "Ki": 0.0589
-            },
-            "180": {
-                "Kp": 0.2874,
-                "Kd": 0.0221,
-                "Ki": 0.0517
-            },
-            "200": {
-                "Kp": 0.2876,
-                "Kd": 0.0312,
-                "Ki": 0.0421
-            },
-            "230": {
-                "Kp": 0.2658,
-                "Kd": 0.0401,
-                "Ki": 0.0504
-            },
-            "250": {
-                "Kp": 0.2500,
-                "Kd": 0.0350,
-                "Ki": 0.0450
-            },
-            "270": {
-                "Kp": 0.2450,
-                "Kd": 0.0320,
-                "Ki": 0.0400
-            },
-            "300": {
-                "Kp": 0.2065,
-                "Kd": 0.0082,
-                "Ki": 0.0181
-            }
+        },
+        "230": {
+                "Kp": 0.26,
+                "Kd": 0.04,
+                "Ki": 0.05
+        },
+        "300": {
+                "Kp": 0.205,
+                "Kd": 0.008,
+                "Ki": 0.017
+        }
         }
         return conf
-
-
 
     # The idea and code for averaging points is from smooth_waypoint_following_local_planner.py
     def next_waypoint_smooth(self, current_speed: float):
         if current_speed > 70 and current_speed < 300:
             target_waypoint = self.average_point(current_speed)
-            self.handle_waypoints(target_waypoint)
         else:
             new_waypoint_index = self.get_lookahead_index(current_speed)
-            self.avg_waypoint_index = new_waypoint_index
             target_waypoint = self.maneuverable_waypoints[new_waypoint_index]
-            self.handle_waypoints(target_waypoint)
         return target_waypoint
 
     def average_point(self, current_speed):
@@ -570,65 +379,53 @@ class RoarCompetitionSolution:
         lookahead_value = self.get_lookahead_value(current_speed)
         num_points = lookahead_value * 2
         
-        if self.current_section in [8, 9]:
+        # if self.current_section in [12]:
+        #     num_points = lookahead_value
+        if self.current_section in [8,9]:
+            # num_points = lookahead_value // 2
             num_points = lookahead_value * 2
-        
+            # num_points = lookahead_value
+            # num_points = 1
         start_index_for_avg = (next_waypoint_index - (num_points // 2)) % len(self.maneuverable_waypoints)
-        
+
         next_waypoint = self.maneuverable_waypoints[next_waypoint_index]
         next_location = next_waypoint.location
-
+  
         sample_points = [(start_index_for_avg + i) % len(self.maneuverable_waypoints) for i in range(0, num_points)]
-        
         if num_points > 3:
-            # Sum the locations and roll_pitch_yaw values
-            location_sum = np.zeros(3)
-            rpy_sum = np.zeros(3)
-            for i in sample_points:
-                location_sum += self.maneuverable_waypoints[i].location
-                rpy_sum += self.maneuverable_waypoints[i].roll_pitch_yaw
-            
+            location_sum = reduce(lambda x, y: x + y,
+                                  (self.maneuverable_waypoints[i].location for i in sample_points))
             num_points = len(sample_points)
             new_location = location_sum / num_points
-            new_rpy = normalize_rad(rpy_sum / num_points)
-            
             shift_distance = np.linalg.norm(next_location - new_location)
             max_shift_distance = 2.0
-            if self.current_section in [1, 2]:
+            if self.current_section in [1,2]:
                 max_shift_distance = 0.2
             if self.current_section in [6, 7]:
                 max_shift_distance = 1.0
-            if self.current_section in [8, 9]:
+            if self.current_section in [8,9]:
                 max_shift_distance = 2.8
-            if self.current_section in [10, 11]:
+            if self.current_section in [10,11]:
                 max_shift_distance = 0.2
             if self.current_section in [12]:
                 max_shift_distance = 0.4
-            
             if shift_distance > max_shift_distance:
                 uv = (new_location - next_location) / shift_distance
-                new_location = next_location + uv * max_shift_distance
-            
+                new_location = next_location + uv*max_shift_distance
+
             target_waypoint = roar_py_interface.RoarPyWaypoint(location=new_location, 
-                                            roll_pitch_yaw=new_rpy, 
-                                            lane_width=0.0)
-
-            # distances = [np.linalg.norm(new_location - wp.location) for wp in self.maneuverable_waypoints]
-            # closest_indices = sorted(range(len(distances)), key=lambda i: distances[i])[:2]
-            # closest_indices.sort()
-
-            self.avg_waypoint_index = closest_indices[0] + 1 
-            
+                                                               roll_pitch_yaw=np.ndarray([0, 0, 0]), 
+                                                               lane_width=0.0)
+            # if next_waypoint_index > 1900 and next_waypoint_index < 2300:
+            #   print("AVG: next_ind:" + str(next_waypoint_index) + " next_loc: " + str(next_location) 
+            #       + " new_loc: " + str(new_location) + " shift:" + str(shift_distance)
+            #       + " num_points: " + str(num_points) + " start_ind:" + str(start_index_for_avg)
+            #       + " curr_speed: " + str(current_speed))
 
         else:
-            target_waypoint = self.maneuverable_waypoints[next_waypoint_index]
-            self.avg_waypoint_index = next_waypoint_index
+            target_waypoint =  self.maneuverable_waypoints[next_waypoint_index]
 
         return target_waypoint
-
-def normalize_rad(radians: np.ndarray) -> np.ndarray:
-    return (radians + np.pi) % (2 * np.pi) - np.pi
-
 
 class LatPIDController():
     def __init__(self, config: dict, dt: float = 0.05):
@@ -653,9 +450,8 @@ class LatPIDController():
             np.cos(normalize_rad(vehicle_rotation[2])),
             np.sin(normalize_rad(vehicle_rotation[2])),
             0])
-        #find the end of the vector
         v_end = v_begin + direction_vector
-        #finds the actual vector
+
         v_vec = np.array([(v_end[0] - v_begin[0]), (v_end[1] - v_begin[1]), 0])
         
         # calculate error projection
@@ -702,7 +498,6 @@ class LatPIDController():
     
     def find_k_values(self, cur_section, current_speed: float, config: dict) -> np.array:
         k_p, k_d, k_i = 1, 0, 0
-        #for sections 8,9,10,11, predefined PID values are set
         if cur_section in [8, 9, 10, 11]:
         #   return np.array([0.3, 0.1, 0.25]) # ok for mu=1.2
         #   return np.array([0.2, 0.03, 0.15])
@@ -712,9 +507,8 @@ class LatPIDController():
           return np.array([0.58, 0.05, 0.02]) # 
         # if cur_section in [12]:
         #   return np.array([0.4, 0.05, 0.02]) # 
-        #iterates through config, each item maps a speed upper bound to a set of PID rules
+
         for speed_upper_bound, kvalues in config.items():
-            #converts speed_upper_bound to a float
             speed_upper_bound = float(speed_upper_bound)
             if current_speed < speed_upper_bound:
                 k_p, k_d, k_i = kvalues["Kp"], kvalues["Kd"], kvalues["Ki"]
@@ -734,7 +528,9 @@ class SpeedData:
         self.speed_diff = current_speed - recommended_speed
 
 class ThrottleController():
-    #Debug 
+    display_debug = False
+    debug_strings = deque(maxlen=1000)
+
     def __init__(self):
         self.max_radius = 10000
         self.max_speed = 300
@@ -751,14 +547,14 @@ class ThrottleController():
         self.brake_test_counter = 0
         self.brake_test_in_progress = False
 
+    def __del__(self):
+        print("done")
         # for s in self.__class__.debug_strings:
         #     print(s)
 
     def run(self, cur_wp_index, waypoints, current_location, current_speed, current_section) -> (float, float, int):
-        self.tick_counter += 1   #keeps track the number of updates
-        #sets throttle and break values 
+        self.tick_counter += 1
         throttle, brake = self.get_throttle_and_brake(cur_wp_index, current_location, current_speed, current_section, waypoints)
-        #sets gear
         gear = max(1, (int)(current_speed / 60))
         if throttle == -1:
             gear = -1
@@ -767,27 +563,25 @@ class ThrottleController():
         #             + " steer " + str(steering)
         #             + "     loc x,z" + str(self.agent.vehicle.transform.location.x)
         #             + " " + str(self.agent.vehicle.transform.location.z)) 
-        #updates speed for future comparisons
+
         self.previous_speed = current_speed
-        #if brakes are applied and there are remaining ticks, making sure that it is breaking long enough
         if self.brake_ticks > 0 and brake > 0:
             self.brake_ticks -= 1
 
         # throttle = 0.05 * (100 - current_speed)
         return throttle, brake, gear
-    # determines throttle and break values based on curr speed and layout of the track
+
     def get_throttle_and_brake(self, cur_wp_index, current_location, current_speed, current_section, waypoints):
-        #gets a set of waypoints based on curr location
+
         wp = self.get_next_interesting_waypoints(current_location, waypoints)
-        #calculates the curvature 
         r1 = self.get_radius(wp[self.close_index : self.close_index + 3])
         r2 = self.get_radius(wp[self.mid_index : self.mid_index + 3])
         r3 = self.get_radius(wp[self.far_index : self.far_index + 3])
-        #computes target speed for each section 
+
         target_speed1 = self.get_target_speed(r1, current_section, current_speed)
         target_speed2 = self.get_target_speed(r2, current_section, current_speed)
         target_speed3 = self.get_target_speed(r3, current_section, current_speed)
-        #calculates distances and target speeds for different points
+
         close_distance = self.target_distance[self.close_index] + 3
         mid_distance = self.target_distance[self.mid_index]
         far_distance = self.target_distance[self.far_index]
@@ -795,28 +589,25 @@ class ThrottleController():
         speed_data.append(self.speed_for_turn(close_distance, target_speed1, current_speed))
         speed_data.append(self.speed_for_turn(mid_distance, target_speed2, current_speed))
         speed_data.append(self.speed_for_turn(far_distance, target_speed3, current_speed))
-        #calculates additional target speed for a wider turn (larger segment of waypoints)
+
         if current_speed > 100:
             # at high speed use larger spacing between points to look further ahead and detect wide turns.
             r4 = self.get_radius([wp[self.close_index], wp[self.close_index+3], wp[self.close_index+6]])
             target_speed4 = self.get_target_speed(r4, current_section, current_speed)
             speed_data.append(self.speed_for_turn(close_distance, target_speed4, current_speed))
-        #selects optimal speed  
+
         update = self.select_speed(speed_data)
-        
+
         # self.print_speed(" -- SPEED: ", 
         #                  speed_data[0].recommended_speed_now, 
         #                  speed_data[1].recommended_speed_now, 
         #                  speed_data[2].recommended_speed_now,
         #                  (0 if len(speed_data) < 4 else speed_data[3].recommended_speed_now), 
         #                  current_speed)
-        #determines the throttle and break values 
+
         t, b = self.speed_data_to_throttle_and_brake(update)
-        #debugging print
-        # self.dprint("--- (" + str(cur_wp_index) + ") throt " + str(t) + " brake " + str(b) + "---")
+        self.dprint("--- (" + str(cur_wp_index) + ") throt " + str(t) + " brake " + str(b) + "---")
         return t, b
-    
-    # gets throttle and brake values based on current speed data, adjuests speed accordingly
 
     def speed_data_to_throttle_and_brake(self, speed_data: SpeedData):
         percent_of_max = speed_data.current_speed / speed_data.recommended_speed_now
@@ -824,23 +615,21 @@ class ThrottleController():
         # self.dprint("dist=" + str(round(speed_data.distance_to_section)) + " cs=" + str(round(speed_data.current_speed, 2)) 
         #             + " ts= " + str(round(speed_data.target_speed_at_distance, 2)) 
         #             + " maxs= " + str(round(speed_data.recommended_speed_now, 2)) + " pcnt= " + str(round(percent_of_max, 2)))
-        # calculates ratio of curr_speed to recommended speed
+
         percent_change_per_tick = 0.07 # speed drop for one time-tick of braking
-        speed_up_threshold = 0.99  #deciding when to speed up
-        throttle_decrease_multiple = 0.7  
+        speed_up_threshold = 0.99
+        throttle_decrease_multiple = 0.7
         throttle_increase_multiple = 1.25
         percent_speed_change = (speed_data.current_speed - self.previous_speed) / (self.previous_speed + 0.0001) # avoid division by zero
 
-        if percent_of_max > 1:   # curr speed > recommended speed, function considers breaking
+        if percent_of_max > 1:
             # Consider slowing down
-            #checks if it should break based on the difference between perent_of_max and percent-change_per_tick
-            #if speed is dropping fast, it reduces breaking and may apply throttle
             brake_threshold_multiplier = 1.0
             if speed_data.current_speed > 200:
                 brake_threshold_multiplier = 1.0
             if percent_of_max > 1 + (brake_threshold_multiplier * percent_change_per_tick):
                 if self.brake_ticks > 0:
-                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: counter" + str(self.brake_ticks))
+                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: counter" + str(self.brake_ticks))
                     return -1, 1
                 # if speed is not decreasing fast, hit the brake.
                 if self.brake_ticks <= 0 and not self.speed_dropping_fast(percent_change_per_tick, speed_data.current_speed):
@@ -848,25 +637,22 @@ class ThrottleController():
                     self.brake_ticks = math.floor((percent_of_max - 1) / percent_change_per_tick)
                     # TODO: try 
                     # self.brake_ticks = 1, or (1 or 2 but not more)
-                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: initiate counter" + str(self.brake_ticks))
+                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: initiate counter" + str(self.brake_ticks))
                     return -1, 1
                 else:
                     # speed is already dropping fast, ok to throttle because the effect of throttle is delayed
-                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early1: sp_ch=" + str(percent_speed_change))
+                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early1: sp_ch=" + str(percent_speed_change))
                     self.brake_ticks = 0 # done slowing down. clear brake_ticks
                     return 1, 0
             else:
-                #if speed is dropping rapidly it applies full throttle
-                # if speed is below speed_up_threshold, applies full throttle
-                #otherwise, it calculates the throttle needed to maintain the curr speed and adjusts accordingly
                 if self.speed_dropping_fast(percent_change_per_tick, speed_data.current_speed):
                     # speed is already dropping fast, ok to throttle because the effect of throttle is delayed
-                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early2: sp_ch=" + str(percent_speed_change))
+                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle early2: sp_ch=" + str(percent_speed_change))
                     self.brake_ticks = 0 # done slowing down. clear brake_ticks
                     return 1, 0
                 throttle_to_maintain = self.get_throttle_to_maintain_speed(speed_data.current_speed)
                 if percent_of_max > 1.02 or percent_speed_change > (-percent_change_per_tick / 2):
-                    # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle down: sp_ch=" + str(percent_speed_change))
+                    self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle down: sp_ch=" + str(percent_speed_change))
                     return throttle_to_maintain * throttle_decrease_multiple, 0 # coast, to slow down
                 else:
                     # self.dprint("tb: tick" + str(self.tick_counter) + " brake: throttle maintain: sp_ch=" + str(percent_speed_change))
@@ -876,29 +662,28 @@ class ThrottleController():
             # Consider speeding up
             if self.speed_dropping_fast(percent_change_per_tick, speed_data.current_speed):
                 # speed is dropping fast, ok to throttle because the effect of throttle is delayed
-                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle: full speed drop: sp_ch=" + str(percent_speed_change))
+                self.dprint("tb: tick" + str(self.tick_counter) + " throttle: full speed drop: sp_ch=" + str(percent_speed_change))
                 return 1, 0
             if percent_of_max < speed_up_threshold:
-                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle full: p_max=" + str(percent_of_max))
+                self.dprint("tb: tick" + str(self.tick_counter) + " throttle full: p_max=" + str(percent_of_max))
                 return 1, 0
             throttle_to_maintain = self.get_throttle_to_maintain_speed(speed_data.current_speed)
             if percent_of_max < 0.98 or percent_speed_change < -0.01:
-                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle up: sp_ch=" + str(percent_speed_change))
+                self.dprint("tb: tick" + str(self.tick_counter) + " throttle up: sp_ch=" + str(percent_speed_change))
                 return throttle_to_maintain * throttle_increase_multiple, 0 
             else:
-                # self.dprint("tb: tick" + str(self.tick_counter) + " throttle maintain: sp_ch=" + str(percent_speed_change))
+                self.dprint("tb: tick" + str(self.tick_counter) + " throttle maintain: sp_ch=" + str(percent_speed_change))
                 return throttle_to_maintain, 0
 
     # used to detect when speed is dropping due to brakes applied earlier. speed delta has a steep negative slope.
     def speed_dropping_fast(self, percent_change_per_tick: float, current_speed):
         percent_speed_change = (current_speed - self.previous_speed) / (self.previous_speed + 0.0001) # avoid division by zero
         return percent_speed_change < (-percent_change_per_tick / 2)
-    #could improve
+
     # find speed_data with smallest recommended speed
     def select_speed(self, speed_data: [SpeedData]):
-        min_speed = 1000  #uses high value as comparison to make sure that actual speeds will be lower
+        min_speed = 1000
         index_of_min_speed = -1
-        #finding minimum speed 
         for i, sd in enumerate(speed_data):
             if sd.recommended_speed_now < min_speed:
                 min_speed = sd.recommended_speed_now
@@ -908,60 +693,51 @@ class ThrottleController():
             return speed_data[index_of_min_speed]
         else:
             return speed_data[0]
-        
-    # calculate throttle value to maintain given speed
+    
     def get_throttle_to_maintain_speed(self, current_speed: float):
         throttle = 0.6 + current_speed/1000
         return throttle
-
-        #calculates max achievable speed for vehicle in given distance 
 
     def speed_for_turn(self, distance: float, target_speed: float, current_speed: float):
         d = (1/675) * (target_speed**2) + distance
         max_speed = math.sqrt(675 * d)
         return SpeedData(distance, current_speed, target_speed, max_speed)
 
-
-    # calculates max speed a vehicle can achieve after traveling specified distance (break, acceleration)
     def speed_for_turn_fix_physics(self, distance: float, target_speed: float, current_speed: float):
         # fix physics
         braking_decceleration = 66.0 # try 11, 14, 56
-        #sets max speed for turning
         max_speed = math.sqrt((target_speed**2) + 2 * distance * (braking_decceleration + 9.81))
         return SpeedData(distance, current_speed, target_speed, max_speed)
 
     def get_next_interesting_waypoints(self, current_location, more_waypoints):
         # return a list of points with distances approximately as given 
         # in intended_target_distance[] from the current location.
-        points = [] # store waypoints
+        points = []
         dist = [] # for debugging
-        #get the starting waypoint
         start = roar_py_interface.RoarPyWaypoint(current_location, np.ndarray([0, 0, 0]), 0.0)
         # start = self.agent.vehicle.transform
-        points.append(start)  
-        curr_dist = 0  # keeps track of total distancec
-        num_points = 0   #keeps track of waypoints
-        for p in more_waypoints:  #go through the waypoints
-            end = p   #set end to current waypoint
-            num_points += 1  #increment number of waypoints passed
+        points.append(start)
+        curr_dist = 0
+        num_points = 0
+        for p in more_waypoints:
+            end = p
+            num_points += 1
             # print("start " + str(start) + "\n- - - - -\n")
             # print("end " + str(end) +     "\n- - - - -\n")
-            curr_dist += distance_p_to_p(start, end)  #calculate distance from start to end and add to currdistance
+            curr_dist += distance_p_to_p(start, end)
             # curr_dist += start.location.distance(end.location)
-            # if curr distance is > the intended target distance for next point
             if curr_dist > self.intended_target_distance[len(points)]:
-                self.target_distance[len(points)] = curr_dist  #update target distance
-                points.append(end)  #store waypoint end
-                dist.append(curr_dist)  #add distance 
-            start = end  #update the new start
-            if len(points) >= len(self.target_distance):   #if the number of points is > the intended target distance, break
+                self.target_distance[len(points)] = curr_dist
+                points.append(end)
+                dist.append(curr_dist)
+            start = end
+            if len(points) >= len(self.target_distance):
                 break
 
-        #self.dprint("wp dist " +  str(dist))
-        return points # return waypoints
-    #returns radius of the curve
+        self.dprint("wp dist " +  str(dist))
+        return points
+
     def get_radius(self, wp):
-        #gets the points of the 3 closest waypoints
         point1 = (wp[0].location[0], wp[0].location[1])
         point2 = (wp[1].location[0], wp[1].location[1])
         point3 = (wp[2].location[0], wp[2].location[1])
@@ -970,41 +746,35 @@ class ThrottleController():
         len_side_1 = round( math.dist(point1, point2), 3)
         len_side_2 = round( math.dist(point2, point3), 3)
         len_side_3 = round( math.dist(point1, point3), 3)
-        #If one of the sides is < small_num, the points are close together (degenerate triangle) so it returns max radius
         small_num = 0.01
         if len_side_1 < small_num or len_side_2 < small_num or len_side_3 < small_num:
             return self.max_radius
 
-        # sp is semi-perimeter 
+        # sp is semi-perimeter
         sp = (len_side_1 + len_side_2 + len_side_3) / 2
 
         # Calculating area using Herons formula
         area_squared = sp * (sp - len_side_1) * (sp - len_side_2) * (sp - len_side_3)
-        #if the area is less than small_num that means that the turn is really small (collinear points)
         if area_squared < small_num:
             return self.max_radius
         # Calculating curvature using Menger curvature formula
         radius = (len_side_1 * len_side_2 * len_side_3) / (4 * math.sqrt(area_squared))
         return radius
     
-
-
     def get_target_speed(self, radius: float, current_section, current_speed):
-        # if the radius of the curve is greater than the max radius, go full speed
         if radius >= self.max_radius:
             return self.max_speed
         #self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2662, 2770]
         #old section indeces = [0, 277, 554, 831, 1108, 1662, 1939, 2216, 2493]
-        # sets the frictino components for each section
         mu = 2.5
         if current_section == 0:
-            mu = 1
+            mu = 2.8
         if current_section == 1:
             mu = 2.0
         if current_section == 2:
             mu = 1.95
         if current_section == 3:
-            mu = 1
+            mu = 2.75
         if current_section == 4:
             mu = 3.25
         if current_section == 5:
@@ -1012,7 +782,7 @@ class ThrottleController():
         if current_section == 6:
             mu = 1.95
         if current_section == 7:
-            mu = 0.5
+            mu = 1.3
         # if current_section == 7 and current_speed<150:
         #     mu = 1.8
         if current_section == 8:
@@ -1032,22 +802,19 @@ class ThrottleController():
             mu = 1.5
         if current_section == 9:
             mu = 1.5'''
-        # sets the target speed using formula. sqrt(friction * gravity(9.81) * radius of curve ) * unit conversion (3.6)
         target_speed = math.sqrt(mu*9.81*radius) * 3.6
-        #makes sure that the target speed is between 20 - maxspeed so it doesnt go too fast
         return max(20, min(target_speed, self.max_speed))  # clamp between 20 and max_speed
 
+    def print_speed(self, text: str, s1: float, s2: float, s3: float, s4: float, curr_s: float):
+        self.dprint(text + " s1= " + str(round(s1, 2)) + " s2= " + str(round(s2, 2)) + " s3= " 
+                    + str(round(s3, 2)) + " s4= " + str(round(s4, 2))
+            + " cspeed= " + str(round(curr_s, 2)))
 
-    # def print_speed(self, text: str, s1: float, s2: float, s3: float, s4: float, curr_s: float):
-    #     self.dprint(text + " s1= " + str(round(s1, 2)) + " s2= " + str(round(s2, 2)) + " s3= " 
-    #                 + str(round(s3, 2)) + " s4= " + str(round(s4, 2))
-    #         + " cspeed= " + str(round(curr_s, 2)))
-
-    # # debug print
-    # def dprint(self, text):
-    #     if self.display_debug:
-    #         print(text)
-    #         self.debug_strings.append(text)
+    # debug print
+    def dprint(self, text):
+        if self.display_debug:
+            print(text)
+            self.debug_strings.append(text)
 
 SEC_8_WAYPOINTS = [
   new_x_y(-104.11528778076172, -726.1124877929688),
@@ -1453,5 +1220,46 @@ SEC_12_WAYPOINTS = [
   new_x_y(-282.1494140625, 393.758056640625)
 ]
 
-#new points for testing purposes 
 
+# Section 0: 319
+# Section 1: 175
+# Section 2: 114
+# Section 3: 146
+# Section 4: 124
+# Section 5: 77
+# Section 6: 313
+# Section 7: 211
+# Section 8: 254
+# Section 9: 75
+# Section 10: 238
+# Section 11: 189
+# Section 12: 161
+# Section 0: 207
+# Section 1: 162
+# Section 2: 112
+# Section 3: 146
+# Section 4: 124
+# Section 5: 75
+# Section 6: 315
+# Section 7: 213
+# Section 8: 252
+# Section 9: 75
+# Section 10: 241
+# Section 11: 188
+# Section 12: 163
+# Section 0: 207
+# Section 1: 162
+# Section 2: 112
+# Section 3: 146
+# Section 4: 124
+# Section 5: 77
+# Section 6: 314
+# Section 7: 212
+# Section 8: 252
+# Section 9: 75
+# Section 10: 239
+# Section 11: 188
+# Section 12: 164
+# end of the loop
+# done
+# Solution finished in 347.2500000000506 seconds

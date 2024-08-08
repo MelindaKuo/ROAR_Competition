@@ -1,6 +1,6 @@
 import roar_py_interface
 import roar_py_carla
-from submission import RoarCompetitionSolution
+from submissionTest import RoarCompetitionSolution
 from infrastructure import RoarCompetitionAgentWrapper, ManualControlViewer
 from typing import List, Type, Optional, Dict, Any
 import carla
