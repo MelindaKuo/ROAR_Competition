@@ -172,7 +172,9 @@ class RoarCompetitionSolution:
 
         # compute and print section timing
         for i, section_ind in enumerate(self.section_indeces):
-            if section_ind - 2 <= self.current_waypoint_idx <= section_ind + 2 and i != self.current_section:
+            if section_ind -2 <= self.current_waypoint_idx \
+                and self.current_waypoint_idx <= section_ind + 2 \
+                    and i != self.current_section:
                 elapsed_ticks = self.num_ticks - self.section_start_ticks
                 self.section_start_ticks = self.num_ticks
                 
@@ -188,7 +190,9 @@ class RoarCompetitionSolution:
                     self.maneuverable_waypoints = self.total_waypoints.copy()
                     self.section_indeces = self.total_waypoint_sections
                     for i, section_ind in enumerate(self.section_indeces):
-                        if section_ind - 2 <= self.current_waypoint_idx <= section_ind + 2 and i != self.current_section:     
+                        if section_ind -2 <= self.current_waypoint_idx \
+                            and self.current_waypoint_idx <= section_ind + 2 \
+                                and i != self.current_section:   
                             self.current_section = i 
                     print(self.section_indeces)
                     print("copied over")

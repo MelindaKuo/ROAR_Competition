@@ -570,7 +570,7 @@ class ThrottleController():
 
     def __init__(self):
         self.max_radius = 10000
-        self.max_speed = 350
+        self.max_speed = 300
         self.intended_target_distance = [0, 30, 60, 90, 120, 150, 180]
         self.target_distance = [0, 30, 60, 90, 120, 150, 180]
         self.close_index = 0
@@ -803,6 +803,8 @@ class ThrottleController():
         return radius
     
     def get_target_speed(self, radius: float, current_section, current_speed):
+        if radius >= self.max_radius:
+            return self.max_speed
         mu = 2.5
         if current_section == 0:
             mu = 2.3
@@ -823,8 +825,8 @@ class ThrottleController():
             # mu = 1.95
         if current_section == 7:
             mu = 0.6
-        if current_section == 7 and current_speed<150:
-            mu = 1.8
+        # if current_section == 7 and current_speed<150:
+        #     mu = 1.8
         if current_section == 8:
             mu = 3.7
         if current_section == 9:
@@ -835,7 +837,7 @@ class ThrottleController():
             mu = 2.2
             # mu = 1.9
         if current_section == 12:
-            mu = 1.6
+            mu = 1.8
         target_speed = math.sqrt(mu*9.81*radius) * 3.6
         return max(20, min(target_speed, self.max_speed))  # clamp between 20 and max_speed
 
