@@ -1,5 +1,4 @@
-
-TOTAL_WAYPOINTS = [
+DOC_WAYPOINTS = [
   new_x_y(-284.1, 395.2),
   new_x_y(-285.85, 398.7),
   new_x_y(-285, 396.758056640625),
