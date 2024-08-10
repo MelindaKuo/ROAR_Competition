@@ -82,7 +82,7 @@ class RoarCompetitionSolution:
         # self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2662, 2770]
         #self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2592, 2770]
         #self.section_indeces = [202, 442, 551, 695, 807, 893, 1287, 1508, 1854, 1968, 2264, 2592, 2770] # -- kinda altered
-        self.section_indeces = [198, 438, 547, 691, 803, 893, 1287, 1505, 1851, 1968, 2264, 2592,2730, 2773] #original
+        self.section_indeces = [198, 438, 547, 691, 803, 893, 1287, 1505, 1851, 1968, 2264, 2592,2700, 2773] #original
         # [198, 438, 547, 691, 803, 893, 1287, 1508, 1854, 1968, 2264, 2592, 2779]
         #self.section_indeces = [202,442,551, 695, 807, 888, 1297, 1504, 1850, 1967, 2255, 2592, 2770] #-- fullly altered
         print(f"1 lap length: {len(self.maneuverable_waypoints)}")
@@ -439,7 +439,7 @@ class RoarCompetitionSolution:
             if self.current_section in [1,2]:
                 max_shift_distance = 0.1
             if self.current_section in [6, 7]:
-                max_shift_distance = 0.7
+                max_shift_distance = 0.65
             if self.current_section in [8,9]:
                 max_shift_distance = 3.8
             if self.current_section in [10,11]:
@@ -814,7 +814,7 @@ class ThrottleController():
         if current_section == 1:
             mu = 2.15
         if current_section == 2:
-            mu = 1.95
+            mu = 1.92
         if current_section == 3:
             mu = 2.8
             # mu = 1
@@ -839,9 +839,9 @@ class ThrottleController():
             mu = 2.2
             # mu = 1.9
         if current_section == 12:
-            mu = 1.8
+            mu = 1.77
         if current_section == 13:
-            mu = 1.4
+            mu = 1.47
         target_speed = math.sqrt(mu*9.81*radius) * 3.6
         return max(20, min(target_speed, self.max_speed))  # clamp between 20 and max_speed
 
