@@ -82,7 +82,7 @@ class RoarCompetitionSolution:
         # self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2662, 2770]
         #self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2592, 2770]
         #self.section_indeces = [202, 442, 551, 695, 807, 893, 1287, 1508, 1854, 1968, 2264, 2592, 2770] # -- kinda altered
-        self.section_indeces = [198, 438, 547, 691, 803, 893, 1287, 1505, 1851, 1968, 2264, 2592, 2772] #original
+        self.section_indeces = [198, 438, 547, 691, 803, 893, 1287, 1505, 1851, 1968, 2264, 2592,2730, 2773] #original
         # [198, 438, 547, 691, 803, 893, 1287, 1508, 1854, 1968, 2264, 2592, 2779]
         #self.section_indeces = [202,442,551, 695, 807, 888, 1297, 1504, 1850, 1967, 2255, 2592, 2770] #-- fullly altered
         print(f"1 lap length: {len(self.maneuverable_waypoints)}")
@@ -437,15 +437,17 @@ class RoarCompetitionSolution:
             shift_distance = np.linalg.norm(next_location - new_location)
             max_shift_distance = 2.0
             if self.current_section in [1,2]:
-                max_shift_distance = 0.2
+                max_shift_distance = 0.1
             if self.current_section in [6, 7]:
                 max_shift_distance = 0.7
             if self.current_section in [8,9]:
-                max_shift_distance = 2.8
+                max_shift_distance = 3.8
             if self.current_section in [10,11]:
                 max_shift_distance = 0.2
             if self.current_section in [12]:
-                max_shift_distance = 0.2
+                max_shift_distance =0.4
+            if self.current_section in [13]:
+                max_shift_distance = -0.6
             if shift_distance > max_shift_distance:
                 uv = (new_location - next_location) / shift_distance
                 new_location = next_location + uv*max_shift_distance
@@ -807,37 +809,39 @@ class ThrottleController():
             return self.max_speed
         mu = 2.5
         if current_section == 0:
-            mu = 2.3
+            mu = 2.5
             # mu = 1
         if current_section == 1:
-            mu = 2.0
+            mu = 2.15
         if current_section == 2:
             mu = 1.95
         if current_section == 3:
-            mu = 2.5
+            mu = 2.8
             # mu = 1
         if current_section == 4:
             mu = 3.25
         if current_section == 5:
             mu = 3.4
         if current_section == 6:
-            mu = 2.6
+            mu = 2.7
             # mu = 1.95
         if current_section == 7:
             mu = 0.6
         # if current_section == 7 and current_speed<150:
         #     mu = 1.8
         if current_section == 8:
-            mu = 3.7
+            mu = 3.9
         if current_section == 9:
-            mu = 3.6
+            mu = 3.8
         if current_section == 10:
             mu = 3.8
         if current_section == 11:
             mu = 2.2
             # mu = 1.9
         if current_section == 12:
-            mu = 1.35
+            mu = 1.8
+        if current_section == 13:
+            mu = 1.4
         target_speed = math.sqrt(mu*9.81*radius) * 3.6
         return max(20, min(target_speed, self.max_speed))  # clamp between 20 and max_speed
 
