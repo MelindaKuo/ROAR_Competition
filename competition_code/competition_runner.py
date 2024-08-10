@@ -220,9 +220,8 @@ async def evaluate_solution(
     if enable_visualization:
         viewer.close()
     
-    return {
-        "elapsed_time" : end_time - start_time,
-    }
+    
+    print("elapsed_time"  + ": " + str((end_time - start_time)))
 
 async def main():
     carla_client = carla.Client('127.0.0.1', 2000)
