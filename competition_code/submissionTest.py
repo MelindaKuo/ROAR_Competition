@@ -837,7 +837,7 @@ class ThrottleController():
             mu = 2.2
             # mu = 1.9
         if current_section == 12:
-            mu = 1.45
+            mu = 1.35
         target_speed = math.sqrt(mu*9.81*radius) * 3.6
         return max(20, min(target_speed, self.max_speed))  # clamp between 20 and max_speed
 
