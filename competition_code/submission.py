@@ -825,7 +825,7 @@ class ThrottleController():
             mu = 2.7
             # mu = 1.95
         if current_section == 7:
-            mu = 1.2
+            mu = 0.6
             # mu = 0.6
         # if current_section == 7 and current_speed<150:
         #     mu = 1.8
