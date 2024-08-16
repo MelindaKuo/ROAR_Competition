@@ -80,12 +80,6 @@ class RoarCompetitionSolution:
         #indexes_per_section = len(self.maneuverable_waypoints) // num_sections
         #self.section_indeces = [indexes_per_section * i for i in range(0, num_sections)]
         # self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2662, 2770]
-<<<<<<< Updated upstream
-        self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2592, 2770]
-        print(f"1 lap length: {len(self.maneuverable_waypoints)}")
-        print(f"indexes: {self.section_indeces}")
-
-=======
         #self.section_indeces = [198, 438, 547, 691, 803, 884, 1287, 1508, 1854, 1968, 2264, 2592, 2770]
         #self.section_indeces = [202, 442, 551, 695, 807, 893, 1287, 1508, 1854, 1968, 2264, 2592, 2770] # -- kinda altered
         self.section_indeces = [198, 438, 547, 691, 803, 893, 1287, 1505, 1851, 1968, 2264, 2592,2700, 2773] #original
@@ -96,7 +90,6 @@ class RoarCompetitionSolution:
 
         
 
->>>>>>> Stashed changes
         # Receive location, rotation and velocity data 
         vehicle_location = self.location_sensor.get_last_gym_observation()
         vehicle_rotation = self.rpy_sensor.get_last_gym_observation()
@@ -418,13 +411,6 @@ class RoarCompetitionSolution:
         lookahead_value = self.get_lookahead_value(current_speed)
         num_points = lookahead_value * 2
         
-<<<<<<< Updated upstream
-        # if self.current_section in [12]:
-        #     num_points = lookahead_value
-        if self.current_section in [8,9]:
-            # num_points = lookahead_value // 2
-            num_points = lookahead_value * 2
-=======
         if self.current_section in [12]:
             num_points = lookahead_value
         if self.current_section in [8,9]:
@@ -434,7 +420,6 @@ class RoarCompetitionSolution:
         # if self.current_section in[6,7]:
         #     num_points = lookahead_value //2
         
->>>>>>> Stashed changes
             # num_points = lookahead_value
             # num_points = 1
         start_index_for_avg = (next_waypoint_index - (num_points // 2)) % len(self.maneuverable_waypoints)
@@ -451,17 +436,6 @@ class RoarCompetitionSolution:
             shift_distance = np.linalg.norm(next_location - new_location)
             max_shift_distance = 2.0
             if self.current_section in [1,2]:
-<<<<<<< Updated upstream
-                max_shift_distance = 0.2
-            if self.current_section in [6, 7]:
-                max_shift_distance = 1.0
-            if self.current_section in [8,9]:
-                max_shift_distance = 2.8
-            if self.current_section in [10,11]:
-                max_shift_distance = 0.2
-            if self.current_section in [12]:
-                max_shift_distance = 0.4
-=======
                 max_shift_distance = 0.1
             if self.current_section in [6, 7]:
                 max_shift_distance = 0.65
@@ -473,7 +447,6 @@ class RoarCompetitionSolution:
                 max_shift_distance =0.4
             if self.current_section in [13]:
                 max_shift_distance = -0.6
->>>>>>> Stashed changes
             if shift_distance > max_shift_distance:
                 uv = (new_location - next_location) / shift_distance
                 new_location = next_location + uv*max_shift_distance
@@ -796,19 +769,11 @@ class ThrottleController():
             curr_dist += distance_p_to_p(start, end)
             # curr_dist += start.location.distance(end.location)
             if curr_dist > self.intended_target_distance[len(points)]:
-<<<<<<< Updated upstream
-                self.target_distance[len(points)] = curr_dist  #update target distance
-                points.append(end)  #store waypoint end
-                dist.append(curr_dist)  #add distance 
-            start = end  #update the new start
-            if len(points) >= len(self.target_distance):   #if the number of poitns is > the intended target distance, break
-=======
                 self.target_distance[len(points)] = curr_dist
                 points.append(end)
                 dist.append(curr_dist)
             start = end
             if len(points) >= len(self.target_distance):
->>>>>>> Stashed changes
                 break
 
         #self.dprint("wp dist " +  str(dist))
